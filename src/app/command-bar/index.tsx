@@ -1,27 +1,29 @@
+import { FC, useContext, useState, useEffect } from 'react'
 import {
-  ActionButton,
-  Coachmark,
-  CommandBar,
-  DefaultButton,
-  DirectionalHint,
-  FontSizes,
-  TeachingBubbleContent,
-  TooltipHost,
-  useTheme,
-} from '@fluentui/react'
-import type { ICommandBarItemProps, IButtonProps } from '@fluentui/react'
-import { FC, useContext, useEffect, useRef, useState } from 'react'
+  Mic,
+  MicOff,
+  Video,
+  VideoOff,
+  MonitorUp,
+  MonitorOff,
+  MessageSquare,
+  Users,
+  Maximize,
+  Minimize,
+  PhoneOff,
+  Copy,
+  Info,
+  Check,
+  Sun,
+  Moon,
+  Shield,
+  Smile,
+  Hand,
+  MoreHorizontal,
+  LayoutGrid,
+  ChevronDown
+} from 'lucide-react'
 import {
-  leaveButtonStyles,
-  commandbarStyles,
-  lightOption,
-  darkOption,
-  copyButtonStyles as inviteButtonStyles,
-} from './styles'
-import InfoCallout from '../../comps/info-overlay'
-import {
-  dummyAudioDevice,
-  dummyVideoDevice,
   requestLeaveRoom,
   startMediaDevice,
   startScreenCapture,
@@ -29,159 +31,92 @@ import {
   stopScreenCapture,
   useLocalState,
   useRemoteState,
+  dummyAudioDevice,
+  dummyVideoDevice,
 } from '../../state'
 import { ColorSchemeContext } from '../../utils/theme/theme-context'
-import { HoverButton } from '../../comps/hover-button'
 import { useCopyToClipboard } from '../../hooks/use-copy-to-clipboard'
-import { commonClasses } from '../../utils/theme/common-styles'
+import InfoCallout from '../../comps/info-overlay'
+import toast, { ToastType } from '../../comps/toast'
 
-const CommandButton: FC<ICommandBarItemProps> = (
-  props: ICommandBarItemProps,
-) => {
-  const {
-    onClick,
-    className,
-    split,
-    tooltipHostProps,
-    disabled,
-    iconProps,
-    subMenuProps: menuProps,
-    text,
-    buttonStyles: styles,
-    iconOnly,
-    data,
-    elementRef,
-  } = props
-
-  return (
-    <TooltipHost
-      {...tooltipHostProps}
-      calloutProps={{ dismissOnTargetClick: true }}
-    >
-      <HoverButton
-        elementRef={elementRef}
-        data={data}
-        className={className}
-        split={split}
-        onClick={onClick as () => void}
-        disabled={disabled}
-        styles={styles}
-        iconProps={iconProps}
-        menuProps={menuProps}
-        text={!iconOnly ? text : undefined}
-      />
-    </TooltipHost>
-  )
+interface ControlButtonProps {
+  icon: FC<{ className?: string }>
+  label: string
+  onClick: () => void
+  isActive?: boolean
+  isDanger?: boolean
+  disabled?: boolean
+  className?: string
+  hasDropdown?: boolean
 }
 
-const OverflowButton: FC<IButtonProps> = ({
+const ControlButton: FC<ControlButtonProps> = ({
+  icon: Icon,
+  label,
   onClick,
-  className,
+  isActive,
+  isDanger,
   disabled,
-  menuProps: subMenuProps,
-  iconProps,
-  text,
-  split,
+  className = '',
+  hasDropdown = false,
 }) => (
-  <CommandButton
-    key="overflow-button"
-    iconProps={iconProps}
-    className={className}
-    text={text}
-    split={split}
-    disabled={disabled}
-    iconOnly
-    subMenuProps={subMenuProps}
-    onClick={onClick as () => void}
-    ariaLabel="More commands"
-    tooltipHostProps={{
-      content: 'Open menu',
-      delay: 0,
-    }}
-  />
+  <div className="flex flex-col items-center gap-1">
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`
+        relative p-2 rounded-full flex items-center justify-center transition-all duration-200
+        ${isActive ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100 text-gray-700'}
+        ${isDanger ? 'bg-red-600 text-white hover:bg-red-700 w-12 h-8 !rounded-full' : 'w-10 h-10'}
+        ${className}
+      `}
+    >
+      <Icon className={`${isDanger ? 'w-5 h-5' : 'w-5 h-5'}`} />
+      {hasDropdown && !isDanger && (
+        <div className="absolute -right-1 bottom-0">
+          <ChevronDown className="w-3 h-3 text-gray-500" />
+        </div>
+      )}
+    </button>
+    {!isDanger && (
+      <span className="text-[10px] font-medium text-gray-600">{label}</span>
+    )}
+    {isDanger && (
+      <span className="text-[10px] font-medium text-gray-600">Leave</span>
+    )}
+  </div>
 )
 
-const InviteButton: FC<ICommandBarItemProps> = ({
-  tooltipHostProps,
-  ...props
-}) => {
-  const targetButton = useRef<HTMLDivElement>(null)
-  const [visible] = useLocalState(state => [state.inviteCoachmarkVisible])
-
-  const theme = useTheme()
-  const room = useRemoteState(state => state.room)
-  const link = room ? `${window.location.origin}/room/${room.id}` : ''
-  const [copied, copy] = useCopyToClipboard()
-
-  const hide = () => {
-    if (useLocalState.getState().inviteCoachmarkVisible) {
-      useLocalState.setState({ inviteCoachmarkVisible: false })
-    }
-  }
+const Timer: FC = () => {
+  const [time, setTime] = useState('00:00')
 
   useEffect(() => {
-    document.body.addEventListener('singleclick', hide)
-    return () => document.body.removeEventListener('singleclick', hide)
+    const start = Date.now()
+    const timer = setInterval(() => {
+      const diff = Math.floor((Date.now() - start) / 1000)
+      const m = Math.floor(diff / 60).toString().padStart(2, '0')
+      const s = (diff % 60).toString().padStart(2, '0')
+      setTime(`${m}:${s}`)
+    }, 1000)
+    return () => clearInterval(timer)
   }, [])
 
-  return (
-    <>
-      <TooltipHost {...tooltipHostProps}>
-        <ActionButton
-          elementRef={targetButton}
-          iconProps={{
-            iconName: copied ? 'CheckboxComposite' : undefined,
-          }}
-          disabled={copied}
-          onClick={() => {
-            if (!copied) {
-              copy(link)
-            }
-          }}
-          text={copied ? 'Copied!' : props.text}
-          styles={props.buttonStyles}
-          style={{
-            color: copied
-              ? theme.semanticColors.successIcon
-              : theme.semanticColors.primaryButtonBackground,
-          }}
-        />
-      </TooltipHost>
-      {visible && (
-        <Coachmark
-          positioningContainerProps={{
-            directionalHint: DirectionalHint.bottomCenter,
-          }}
-          delayBeforeMouseOpen={0}
-          isCollapsed={false}
-          target={targetButton.current}
-          ariaAlertText="A coachmark has appeared"
-          ariaLabelledByText="Coachmark notification"
-        >
-          <TeachingBubbleContent
-            isClickableOutsideFocusTrap={true}
-            headline="Welcome to the Mooz Meeting!"
-            styles={{
-              headline: {
-                fontSize: FontSizes.mediumPlus,
-              },
-            }}
-            hasCloseButton
-            closeButtonAriaLabel="Close"
-            onDismiss={hide}
-          >
-            <div className={commonClasses.message}>
-              Invite your folks over here by sharing the meeting link.
-            </div>
-          </TeachingBubbleContent>
-        </Coachmark>
-      )}
-    </>
-  )
+  return <span className="text-sm font-medium text-gray-700">{time}</span>
 }
 
 const MyCommandBar: FC = () => {
   const { setColorScheme, colorScheme } = useContext(ColorSchemeContext)
+  const [showInfo, setShowInfo] = useState(false)
+  const [copied, copy] = useCopyToClipboard()
+
+  // Popups state
+  const [showReactions, setShowReactions] = useState(false)
+  const [showMore, setShowMore] = useState(false)
+
+  const room = useRemoteState(state => state.room)
+  const link = room ? `${window.location.origin}/room/${room.id}` : ''
+
+  // State handlers
   const toggleChats = () =>
     useLocalState.setState(s => ({
       sidePanelTab: s.sidePanelTab === 'chats' ? undefined : 'chats',
@@ -194,6 +129,18 @@ const MyCommandBar: FC = () => {
     useLocalState.setState(s => ({
       fullscreenEnabled: !s.fullscreenEnabled,
     }))
+  const toggleWhiteboard = () =>
+    useLocalState.setState(s => ({
+      whiteboardActive: !s.whiteboardActive,
+    }))
+  const toggleHand = () => {
+    const { handRaised } = useLocalState.getState()
+    useLocalState.setState({ handRaised: !handRaised })
+    // TODO: Emit socket event
+    if (!handRaised) {
+      toast('You raised your hand ✋', { type: ToastType.info })
+    }
+  }
 
   const [
     currentMicId,
@@ -202,6 +149,8 @@ const MyCommandBar: FC = () => {
     videoDevices,
     displayStreamActive,
     fullscreenEnabled,
+    whiteboardActive,
+    handRaised,
   ] = useLocalState(state => [
     state.currentMicId,
     state.currentCameraId,
@@ -209,297 +158,176 @@ const MyCommandBar: FC = () => {
     state.videoDevices,
     state.screenMediaActive,
     state.fullscreenEnabled,
+    state.whiteboardActive,
+    state.handRaised,
   ])
-  const connections = useRemoteState(state => state.connections)
 
-  const isRemoteDisplay =
-    connections.filter(c => !c.displayStream.empty).length > 0
+  const connections = useRemoteState(state => state.connections)
+  const isRemoteDisplay = connections.some(c => !c.displayStream.empty)
   const [mediaBtnsDisabled, setMediaBtnsDisabled] = useState(false)
 
-  const startAudio = async (device?: MediaDeviceInfo) => {
+  // Media handlers (Audio/Video/Screen)
+  const handleAudio = async () => {
     setMediaBtnsDisabled(true)
-    await startMediaDevice(device || dummyAudioDevice)
-    setMediaBtnsDisabled(false)
-  }
-  const startVideo = async (device?: MediaDeviceInfo) => {
-    setMediaBtnsDisabled(true)
-    await startMediaDevice(device || dummyVideoDevice)
-    setMediaBtnsDisabled(false)
-  }
-  const startScreen = async () => {
-    setMediaBtnsDisabled(true)
-    await startScreenCapture()
-    setMediaBtnsDisabled(false)
-  }
-  const stopScreen = async () => {
-    setMediaBtnsDisabled(true)
-    stopScreenCapture()
-    setMediaBtnsDisabled(false)
-  }
-  const stopAudio = async (device?: MediaDeviceInfo) => {
-    setMediaBtnsDisabled(true)
-    stopMediaDevice(device || dummyAudioDevice)
-    setMediaBtnsDisabled(false)
-  }
-  const stopVideo = async (device?: MediaDeviceInfo) => {
-    setMediaBtnsDisabled(true)
-    stopMediaDevice(device || dummyVideoDevice)
+    if (!currentMicId)
+      await startMediaDevice(audioDevices[0] || dummyAudioDevice)
+    else
+      await stopMediaDevice(
+        audioDevices.find(d => d.deviceId === currentMicId) || dummyAudioDevice,
+      )
     setMediaBtnsDisabled(false)
   }
 
-  const screenShareButtonRef = useRef<HTMLButtonElement | null>(null)
-  const cameraButtonRef = useRef<HTMLButtonElement | null>(null)
-  const micButtonRef = useRef<HTMLButtonElement | null>(null)
-  const chatButtonRef = useRef<HTMLButtonElement | null>(null)
-  useEffect(() => {
-    useLocalState.setState({
-      screenShareButtonRef,
-      cameraButtonRef,
-      micButtonRef,
-      chatsButtonRef: chatButtonRef,
-    })
-  }, [])
-  const items: ICommandBarItemProps[] = [
-    {
-      commandBarButtonAs: CommandButton,
-      iconProps: currentCameraId
-        ? { iconName: 'Video' }
-        : { iconName: 'VideoOff' },
-      onClick: () => {
-        if (!currentCameraId) {
-          startVideo(videoDevices[0])
-        } else {
-          stopVideo(videoDevices.find(d => d.deviceId === currentCameraId))
-        }
-      },
-      elementRef: cameraButtonRef,
-      disabled: mediaBtnsDisabled,
-      key: 'videoToggle',
-      text: 'Video',
-      tooltipHostProps: {
-        content: 'Toggle video',
-        delay: 0,
-      },
-      data: { isHot: !!currentCameraId },
-      split: true,
-      subMenuProps: !videoDevices.length
-        ? undefined
-        : {
-            items: videoDevices.map(device => ({
-              key: device.deviceId,
-              text: device.label,
-              iconProps:
-                currentCameraId === device.deviceId
-                  ? { iconName: 'TVMonitorSelected' }
-                  : undefined,
-              onClick: () => {
-                if (!currentCameraId) {
-                  startVideo(device)
-                } else if (currentCameraId === device.deviceId) {
-                  stopVideo(device)
-                } else {
-                  stopVideo(
-                    videoDevices.find(d => d.deviceId === currentCameraId),
-                  )
-                  startVideo(device)
-                }
-              },
-            })),
-          },
-    },
-    {
-      commandBarButtonAs: CommandButton,
-      iconProps: currentMicId
-        ? { iconName: 'Microphone' }
-        : { iconName: 'MicOff' },
-      onClick: () => {
-        if (!currentMicId) {
-          startAudio(audioDevices[0])
-        } else {
-          stopAudio(audioDevices.find(d => d.deviceId === currentMicId))
-        }
-      },
-      elementRef: micButtonRef,
-      data: { isHot: !!currentMicId },
-      disabled: mediaBtnsDisabled,
-      key: 'audioToggle',
-      text: 'Audio',
-      tooltipHostProps: {
-        content: 'Toggle audio',
-        delay: 0,
-      },
-      split: true,
-      subMenuProps: !audioDevices.length
-        ? undefined
-        : {
-            items: audioDevices.map(device => ({
-              key: device.deviceId,
-              text: device.label,
-              iconProps:
-                currentMicId === device.deviceId
-                  ? { iconName: 'TVMonitorSelected' }
-                  : undefined,
-              onClick: () => {
-                if (!currentMicId) {
-                  startAudio(device)
-                } else if (currentMicId === device.deviceId) {
-                  stopAudio(device)
-                } else {
-                  stopAudio(audioDevices.find(d => d.deviceId === currentMicId))
-                  startAudio(device)
-                }
-              },
-            })),
-          },
-    },
-    {
-      commandBarButtonAs: CommandButton,
-      key: 'screen',
-      text: 'Screen',
-      elementRef: screenShareButtonRef,
-      split: true,
-      data: { isHot: displayStreamActive },
-      disabled: mediaBtnsDisabled || (!displayStreamActive && isRemoteDisplay),
-      iconProps: {
-        iconName: 'ScreenCast',
-      },
-      tooltipHostProps: {
-        content: displayStreamActive
-          ? 'Stop sharing'
-          : !isRemoteDisplay
-          ? 'Share your screen'
-          : "Someone's already sharing screen",
-        delay: 0,
-      },
-      onClick: () => {
-        if (!displayStreamActive) {
-          startScreen()
-        } else {
-          stopScreen()
-        }
-      },
-    },
-    {
-      commandBarButtonAs: CommandButton,
-      onClick: toggleChats,
-      key: 'chats',
-      text: 'Chats',
-      elementRef: chatButtonRef,
-      iconProps: {
-        iconName: 'Chat',
-      },
-      tooltipHostProps: {
-        content: 'Chats',
-        delay: 0,
-      },
-    },
-    {
-      commandBarButtonAs: CommandButton,
-      onClick: togglePeople,
-      key: 'people',
-      text: 'People',
-      iconProps: {
-        iconName: 'People',
-      },
-      tooltipHostProps: {
-        content: 'Meeting participants',
-        delay: 0,
-      },
-    },
-  ]
-  const overflowItems: ICommandBarItemProps[] = [
-    {
-      key: 'theme',
-      text: 'Choose theme',
-      secondaryText: colorScheme,
-      iconProps: { iconName: 'Contrast' },
-      subMenuProps: {
-        items: [
-          {
-            key: 'light',
-            text: 'Light',
-            className: lightOption,
-            onClick: () => colorScheme !== 'light' && setColorScheme('light'),
-          },
-          {
-            key: 'dark',
-            text: 'Dark',
-            className: darkOption,
-            onClick: () => colorScheme !== 'dark' && setColorScheme('dark'),
-          },
-        ],
-      },
-    },
-    {
-      key: 'fullscreen',
-      text: 'Toggle fullscreen',
-      secondaryText: fullscreenEnabled ? 'On' : 'Off',
-      iconProps: { iconName: 'Fullscreen' },
-      onClick: toggleFullscreen,
-    },
-  ]
+  const handleVideo = async () => {
+    setMediaBtnsDisabled(true)
+    if (!currentCameraId)
+      await startMediaDevice(videoDevices[0] || dummyVideoDevice)
+    else
+      await stopMediaDevice(
+        videoDevices.find(d => d.deviceId === currentCameraId) ||
+        dummyVideoDevice,
+      )
+    setMediaBtnsDisabled(false)
+  }
 
-  const [showInfo, setShowInfo] = useState(false)
-  const farItems: ICommandBarItemProps[] = [
-    {
-      commandBarButtonAs: InviteButton,
-      buttonStyles: inviteButtonStyles,
-      key: 'copy',
-      text: 'Copy invite link',
-      ariaLabel: 'Copy invite link',
-    },
-    {
-      commandBarButtonAs: ({ text, key, tooltipHostProps }) => (
-        <TooltipHost {...tooltipHostProps}>
-          <DefaultButton
-            onClick={() => requestLeaveRoom()}
-            text={text}
-            key={key}
-            styles={leaveButtonStyles}
-          />
-        </TooltipHost>
-      ),
-      key: 'leave',
-      text: 'Leave',
-      tooltipHostProps: {
-        delay: 0,
-        content: 'Leave room',
-      },
-    },
-    {
-      commandBarButtonAs: CommandButton,
-      className: 'commandbar-info-button',
-      key: 'info',
-      text: 'Info',
-      ariaLabel: 'Info',
-      iconOnly: true,
-      iconProps: { iconName: 'Info' },
-      onClick: () => setShowInfo(!showInfo),
-      tooltipHostProps: {
-        delay: 0,
-        content: 'Info and links',
-      },
-    },
-  ]
+  const handleScreen = async () => {
+    setMediaBtnsDisabled(true)
+    if (!displayStreamActive) await startScreenCapture()
+    else stopScreenCapture()
+    setMediaBtnsDisabled(false)
+  }
+
+  const sendReaction = (emoji: string) => {
+    toast(`Reaction Sent: ${emoji}`, { type: ToastType.info })
+    setShowReactions(false)
+  }
 
   return (
     <>
-      <CommandBar
-        styles={commandbarStyles}
-        items={items}
-        overflowItems={overflowItems}
-        overflowButtonAs={OverflowButton}
-        farItems={farItems}
-        ariaLabel="Use left and right arrow keys to navigate between commands"
-      />
+      <div className="fixed top-0 left-0 w-full h-[72px] bg-white border-b border-gray-200 z-[101] px-4 flex items-center justify-between shadow-sm">
+        {/* Left: Security & Timer */}
+        <div className="flex items-center gap-4">
+          <Shield className="w-5 h-5 text-gray-600" />
+          <div className="h-6 w-px bg-gray-300 mx-2" />
+          <Timer />
+        </div>
+
+        {/* Right: Controls */}
+        <div className="flex items-center gap-4">
+          <ControlButton
+            icon={MessageSquare}
+            label="Chat"
+            onClick={toggleChats}
+          />
+          <ControlButton
+            icon={Users}
+            label="People"
+            onClick={togglePeople}
+          />
+          <ControlButton
+            icon={MonitorUp}
+            label="Whiteboard"
+            onClick={toggleWhiteboard}
+            isActive={whiteboardActive}
+          />
+          <ControlButton
+            icon={Hand}
+            label="Raise"
+            onClick={toggleHand}
+            isActive={handRaised}
+          />
+
+          <div className="relative">
+            <ControlButton
+              icon={Smile}
+              label="React"
+              onClick={() => setShowReactions(!showReactions)}
+              isActive={showReactions}
+            />
+            {showReactions && (
+              <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-white shadow-xl rounded-full p-2 flex gap-2 border border-gray-100 animate-in fade-in zoom-in duration-200 z-50">
+                {['👍', '❤️', '😂', '😮', '😢', '🎉'].map(emoji => (
+                  <button
+                    key={emoji}
+                    onClick={() => sendReaction(emoji)}
+                    className="hover:scale-125 transition-transform text-xl p-1"
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <ControlButton
+            icon={LayoutGrid}
+            label="View"
+            onClick={() => { }} // Placeholder
+          />
+
+          <div className="relative">
+            <ControlButton
+              icon={MoreHorizontal}
+              label="More"
+              onClick={() => setShowMore(!showMore)}
+              isActive={showMore}
+            />
+            {showMore && (
+              <div className="absolute top-full mt-2 right-0 bg-white shadow-xl rounded-lg p-3 w-48 border border-gray-100 z-50">
+                <p className="text-sm text-gray-500 text-center">More features coming soon!</p>
+              </div>
+            )}
+          </div>
+
+          <div className="h-8 w-px bg-gray-300 mx-2" />
+
+          <ControlButton
+            icon={currentCameraId ? Video : VideoOff}
+            label="Camera"
+            onClick={handleVideo}
+            isActive={!!currentCameraId}
+            hasDropdown
+            disabled={mediaBtnsDisabled}
+          />
+          <ControlButton
+            icon={currentMicId ? Mic : MicOff}
+            label="Mic"
+            onClick={handleAudio}
+            isActive={!!currentMicId}
+            hasDropdown
+            disabled={mediaBtnsDisabled}
+          />
+          <ControlButton
+            icon={displayStreamActive ? MonitorOff : MonitorUp}
+            label="Share"
+            onClick={handleScreen}
+            isActive={displayStreamActive}
+            disabled={
+              mediaBtnsDisabled || (!displayStreamActive && isRemoteDisplay)
+            }
+          />
+
+          <div className="h-8 w-px bg-gray-300 mx-2" />
+
+          <ControlButton
+            icon={PhoneOff}
+            label="Leave" // Label handled internally for danger
+            onClick={requestLeaveRoom}
+            isDanger
+            hasDropdown
+          />
+        </div>
+      </div>
+
       {showInfo && (
         <InfoCallout
           onDismiss={() => setShowInfo(false)}
-          target=".commandbar-info-button"
+          target=".glass" // approximate target
           showFooter
         />
       )}
     </>
   )
 }
+
 export default MyCommandBar

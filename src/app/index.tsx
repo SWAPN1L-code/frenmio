@@ -16,6 +16,7 @@ import {
 import './main.css'
 import toast from '../comps/toast'
 import { MediaPanel } from './media/panel'
+import Whiteboard from '../comps/whiteboard'
 
 const App: FC = () => {
   const [socket, connections] = useRemoteState(state => [
@@ -80,9 +81,12 @@ const App: FC = () => {
   return (
     <Fullscreen>
       <CommandBar />
-      <Media />
-      <MediaPanel />
-      <SidePanel />
+      <div className="w-full h-full pt-[72px]">
+        <Media />
+        <MediaPanel />
+        <Whiteboard />
+        <SidePanel />
+      </div>
     </Fullscreen>
   )
 }

@@ -1,3 +1,4 @@
+import './glass-globals.css'
 import React, { FC, lazy, Suspense, useEffect, useRef } from 'react'
 import { createRoot } from 'react-dom/client'
 import { initializeIcons, mergeStyles, Spinner } from '@fluentui/react'
@@ -49,7 +50,7 @@ const Eagle: FC = () => {
     if (currRoom) {
       document.title = currRoom.name
     } else {
-      document.title = 'Mooz'
+      document.title = 'Frenmio'
     }
   }, [currRoom])
 

@@ -311,7 +311,7 @@ export const enterRoom = (room: IRoom) => {
     room,
   })
   playEnterRoomSound()
-  window.history.pushState({}, 'Mooz', `/room/${room.id}`)
+  window.history.pushState({}, 'Frenmio', `/room/${room.id}`)
   toast(`Joined ${room.name}`)
 
   useJoinFormState.setState({

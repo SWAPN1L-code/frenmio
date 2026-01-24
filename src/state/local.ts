@@ -29,7 +29,9 @@ export const useLocalState = create<ILocalState>()(
         sidePanelTab: undefined,
         floatingChatEnabled: false,
         fullscreenEnabled: false,
+        whiteboardActive: false,
         preferences: {},
+        handRaised: false,
       }) as ILocalState,
     {
       name: 'mooz-prefs',
@@ -130,7 +132,7 @@ export const startMediaDevice = async (device: MediaDeviceInfo) => {
       config.audio = false
     }
 
-    ;(await navigator.mediaDevices.getUserMedia(config))
+    ; (await navigator.mediaDevices.getUserMedia(config))
       .getTracks()
       .forEach(track => {
         track.onended = () => stopMediaDevice(device)
@@ -164,7 +166,7 @@ export const startScreenCapture = async () => {
     if (stream.getTracks().length) {
       throw Error('Screen capture already active')
     }
-    ;(
+    ; (
       await navigator.mediaDevices.getDisplayMedia({
         video: { cursor: 'always' } as MediaTrackConstraints,
         audio: {

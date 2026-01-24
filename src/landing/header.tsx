@@ -1,102 +1,44 @@
-import {
-  ActionButton,
-  Image,
-  Link,
-  Stack,
-  TooltipHost,
-  useTheme,
-} from '@fluentui/react'
-import { useContext, type FC } from 'react'
-import { classes } from './styles'
-import { Container } from '../comps/container'
-import { ColorSchemeContext } from '../utils/theme/theme-context'
+import { FC } from 'react'
+import { Monitor } from 'lucide-react'
 
-const Header: FC = ({}) => {
-  const theme = useTheme()
-  const links = [
-    {
-      text: 'GitHub',
-      href: 'https://github.com/muzam1l/mooz',
-    },
-    {
-      text: 'muzam1l',
-      href: 'https://muzam1l.com',
-    },
-  ]
+const links = [
+  { text: 'Help', href: '#' },
+  { text: 'About', href: '#' },
+  {
+    text: 'GitHub',
+    href: 'https://github.com/swapnilnegi/mooz',
+  },
+]
 
-  const { setColorScheme, colorScheme } = useContext(ColorSchemeContext)
+const Header: FC = () => {
   return (
-    <Stack
-      className={classes.header}
-      horizontal
-      verticalAlign="center"
-      horizontalAlign="center"
-    >
-      <Container>
-        <Stack
-          horizontal
-          horizontalAlign="space-between"
-          verticalAlign="center"
-        >
-          <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }}>
-            <Link href="/">
-              <Image width={30} height={30} src="/logo-192.png" />
-            </Link>
-            <div className={classes.title}>Mooz</div>
-          </Stack>
-          <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 0 }}>
-            {links.map(({ text, href }) => (
-              <ActionButton
-                href={href}
-                key={text}
-                text={text}
-                rel="noopener noreferrer"
-                target="_blank"
-                iconProps={{
-                  iconName: 'NavigateExternalInline',
-                  styles: {
-                    root: {
-                      marginTop: -2,
-                    },
-                  },
-                }}
-              />
-            ))}
-            <TooltipHost
-              content={`Switch to ${
-                colorScheme === 'dark' ? 'light' : 'dark'
-              } theme`}
-              delay={0}
-              id={'theme-toggle-tooltip'}
-              calloutProps={{ gapSpace: 0 }}
-            >
-              <ActionButton
-                aria-describedby={'theme-toggle-tooltip'}
-                iconProps={{
-                  iconName: colorScheme === 'dark' ? 'Sunny' : 'ClearNight',
-                }}
-                styles={{
-                  root: {
-                    ':hover': {
-                      color: 'red !important',
-                    },
-                  },
-                  icon: {
-                    color: theme.semanticColors.bodyText,
-                    fontWeight: 'bold',
-                    fontSize: theme.fonts.xLarge.fontSize,
-                  },
-                }}
-                onClick={() => {
-                  setColorScheme(colorScheme === 'dark' ? 'light' : 'dark')
-                }}
-                ariaLabel="Toggle color scheme"
-              />
-            </TooltipHost>
-          </Stack>
-        </Stack>
-      </Container>
-    </Stack>
+    <nav className="w-full px-16 py-10 flex justify-between items-center z-20">
+      <div className="flex items-center space-x-4">
+        <div className="w-11 h-11 bg-accent-brown dark:bg-primary rounded-xl flex items-center justify-center text-white font-bold text-xl">
+          F
+        </div>
+        <span className="text-2xl font-bold tracking-tight text-accent-brown dark:text-white">
+          Frenmio
+        </span>
+      </div>
+      <div className="flex items-center space-x-12 text-sm font-semibold opacity-60">
+        {links.map(link => (
+          <a
+            key={link.text}
+            href={link.href}
+            className="hover:text-primary transition-colors hover:opacity-100"
+            target={link.text === 'GitHub' ? '_blank' : undefined}
+            rel={link.text === 'GitHub' ? 'noreferrer' : undefined}
+          >
+            {link.text}
+          </a>
+        ))}
+        {/* Dark Mode Toggle - Simplified placeholder logic for now */}
+        <button className="p-2.5 rounded-full hover:bg-muted-beige dark:hover:bg-white/10 transition-colors">
+          <span className="material-symbols-outlined text-2xl">dark_mode</span>
+        </button>
+      </div>
+    </nav>
   )
 }
 

@@ -20,10 +20,11 @@ const toast = (text: string, options?: IToastOptions) => {
     type === MessageBarType.error || type === MessageBarType.blocked
       ? theme.semanticColors.errorText
       : type === MessageBarType.success
-      ? theme.semanticColors.successIcon
-      : type === MessageBarType.warning || type === MessageBarType.severeWarning
-      ? theme.semanticColors.warningIcon
-      : theme.semanticColors.messageText
+        ? theme.semanticColors.successIcon
+        : type === MessageBarType.warning ||
+            type === MessageBarType.severeWarning
+          ? theme.semanticColors.warningIcon
+          : theme.semanticColors.messageText
   return toastify(
     <MessageBar
       onClick={onClick}

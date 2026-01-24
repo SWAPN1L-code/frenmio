@@ -11,13 +11,13 @@ export * from '@server/types'
 // TODO Enum keys to reduce socket payload.
 export type ISocketMessageData =
   | {
-      connection: true
-      userName: string
-    }
+    connection: true
+    userName: string
+  }
   | {
-      sdpSignal: unknown
-      metaData: ConnectionMetaData
-    }
+    sdpSignal: unknown
+    metaData: ConnectionMetaData
+  }
 
 type ConnectionMetaData = {
   screenStreamId: string
@@ -30,6 +30,7 @@ export interface IChatState {
 
 export interface IPeerData {
   chat?: IChatMessage
+  whiteboard?: string // Serialized Excalidraw elements or scene
 }
 
 export class Stream extends MediaStream {
@@ -79,6 +80,7 @@ export interface ILocalState {
   sidePanelTab: 'chats' | 'people' | undefined
   floatingChatEnabled: boolean
   fullscreenEnabled: boolean
+  whiteboardActive: boolean
   screenShareButtonRef?: RefObject<HTMLButtonElement>
   cameraButtonRef?: RefObject<HTMLButtonElement>
   micButtonRef?: RefObject<HTMLButtonElement>
@@ -87,6 +89,7 @@ export interface ILocalState {
     userName?: string
     meetingName?: string
   }
+  handRaised: boolean
 }
 
 export interface IRemoteState {

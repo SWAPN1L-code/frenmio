@@ -4,7 +4,6 @@ import {
   mergeStyleSets,
   FontSizes,
   FontWeights,
-  Link,
   Label,
   Text,
   ActionButton,
@@ -97,23 +96,7 @@ const InfoOverlay: FC<ICalloutProps & InfoProps> = ({
       </div>
       {showFooter && (
         <div className={callout.footer}>
-          <span>
-            Mooz by{' '}
-            <Link
-              href="https://github.com/muzam1l"
-              target="_blank"
-              rel="nofollow noreferrer noopener"
-            >
-              muzam1l
-            </Link>
-          </span>
-          <Link
-            href="https://github.com/muzam1l/mooz"
-            target="_blank"
-            rel="nofollow noreferrer noopener"
-          >
-            Fork on GitHub
-          </Link>
+          <span>Frenmio</span>
         </div>
       )}
     </Callout>

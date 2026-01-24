@@ -1,77 +1,113 @@
-[![Netlify Status](https://api.netlify.com/api/v1/badges/34ca34b4-fd05-471c-b089-318757ff59c0/deploy-status)](https://app.netlify.com/sites/mooz-app/deploys)
-[![Azure Status](https://github.com/muzam1l/mooz/actions/workflows/master_mooz-socket.yml/badge.svg)](./.github/workflows/master_mooz-socket.yml)
+# Frenmio
 
-# Mooz
+Frenmio is a modern, real-time video conferencing application built with React, WebRTC, and Socket.io. It allows users to create and join rooms for video calls, screen sharing, real-time chat, and collaborative whiteboarding.
 
-Create or join a peer-to-peer meeting instantly. Supports audio, video, screen-share and chat all going through the p2p mesh network which is guaranteed to be of fully-connected type.
+## Features
 
-https://github.com/muzam1l/mooz/assets/52374648/d86b7e0c-c173-40ce-bd87-4e78161a1053
+- **Real-time Video & Audio**: High-quality peer-to-peer communication using WebRTC.
+- **Screen Sharing**: Share your screen with other participants in the room.
+- **Instant chat**: Built-in text chat for communicating with peers.
+- **Whiteboard**: Collaborative whiteboard for drawing and brainstorming.
+- **Room Management**: Easy creation and joining of rooms via unique IDs or links.
+- **Modern UI**: Sleek interface built with Tailwind CSS and Fluent UI.
+- **Responsive Design**: Works across different screen sizes.
 
-<p align="center">
-    <a href="https://mooz.muzam1l.com">mooz.muzam1l.com</a>
-</p>
+## Tech Stack
 
-# Libs
+### Frontend
+- **Framework**: [React](https://reactjs.org/) (TypeScript)
+- **Build Tool**: [Craco](https://craco.js.org/) (Create React App Configuration Override)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/) & [Fluent UI](https://developer.microsoft.com/en-us/fluentui#/)
+- **State Management**: [Zustand](https://github.com/pmndrs/zustand)
+- **WebRTC**: [simple-peer](https://github.com/feross/simple-peer) & [socket.io-client](https://socket.io/docs/v4/client-api/)
+- **Whiteboard**: [Excalidraw](https://excalidraw.com/) libraries (`@excalidraw/excalidraw`)
 
-- `Angular` ah just kidding, always `React`!
-- `Zustand` for state management, love the flexibility and my hair!
-- `Fluentui` for UI components and this Microsofty look!
-- `SocketIO` on the server side for signaling and room management. Any erroring node in the room mesh network is terminated appropriately, ensuring a fully-connected mesh network while tolerating some network failures and reconnects.
+### Backend
+- **Runtime**: [Node.js](https://nodejs.org/)
+- **Signaling**: [Socket.io](https://socket.io/)
+- **Language**: TypeScript
 
-# Goals
+## Prerequisites
 
-Being an open source peer-to-peer video conferencing core app, easily deployable, extentable and customizable for custom use cases.
+- Node.js (v16 or higher)
+- npm (Node Package Manager)
 
-This could serve as a base app for any derived work, implementing features like these on top of it:
+## Getting Started
 
-- Large File sharing.
-- Session recording.
-- End-to-end encryption.
-- Collaborative whiteboard.
-- Admin controls.
-
-# Limitations
-
-It scales very well in terms of how many rooms can be on server as it is a peer to peer solution. However there is a huge natural limitation on how many participants can be in one single room due to bandwidth and processing requirements of a fully-connected mesh network. As each node sends and receives data from every other node in the room, the bandwidth and processing requirements grow substantially with large number of participants in the room.
-
-# Why node-cache instead of database?
-
-Works for now!
-
-TODO migrate to redis adapter.
-
-# Building
-
-## Docker
-
-There are two `Dockerfile`'s in `<project_root>` and `<project_root>/server` and a `docker-compose.yml` file in `<project_root>`. Just run:
-
-```sh
-docker-compose up
+### 1. Clone the repository
+```bash
+git clone <repository-url>
+cd frenmio
 ```
 
-And head over to localhost! If you want to use same setup in production environment, you will need to have this running behind ssl, load-balancer and stuff!
+### 2. Set up the Server
 
-## Manual
+Navigate to the server directory and install dependencies:
+```bash
+cd server
+npm install
+```
 
-### Install
+Create a `.env` file in the `server` directory (or remove `.example` from `.env.example`):
+```bash
+# server/.env
+PORT=5005
+ALLOW_ORIGIN=["http://localhost:3000"] # Adjust to match your client URL
+```
 
-- `yarn` to to install dependencies. 
+Start the development server:
+```bash
+npm run dev
+```
+The server will start on port `5005`.
 
-- `yarn dev` to start development webpack server.
+### 3. Set up the Client (Frontend)
 
-- `yarn build` to format, lint and build front-end.
+Open a new terminal, navigate to the root directory, and install dependencies:
+```bash
+cd .. # if you are in server directory
+npm install
+```
 
-[cd `server`]
+Create a `.env` file in the root directory:
+```bash
+# .env
+REACT_APP_SAME_ORIGIN_SOCKET_PORT=5005
+# If running on a different host/port, use REACT_APP_SOCKET_URL
+# REACT_APP_SOCKET_URL=http://localhost:5005
+```
 
-- `npm install` to install dependencies.
+Start the frontend application:
+```bash
+npm run dev
+```
+The application will be available at `http://localhost:3000`.
 
-- `npm run dev` to start development server with nodemon (install globally).
+## Project Structure
 
-- `npm run build` to transpile Typescript files to JavaScript.
+```
+frenmio/
+├── server/                 # Backend signaling server
+│   ├── index.ts            # Entry point for the server
+│   └── ...
+├── src/                    # Frontend source code
+│   ├── app/                # Main application logic (Room view)
+│   ├── comps/              # Reusable UI components
+│   ├── landing/            # Landing page components
+│   ├── state/              # Global state (Zustand stores)
+│   ├── utils/              # Helper functions and hooks
+│   ├── index.tsx           # Entry point
+│   └── ...
+├── public/                 # Static assets
+└── ...
+```
 
-- `npm run start` to start production server.
+## Contributing
 
-# More
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-Still reading? Get a life dude!
+1. Fork the project
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
