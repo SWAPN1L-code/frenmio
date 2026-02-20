@@ -80,12 +80,27 @@ const App: FC = () => {
 
   return (
     <Fullscreen>
-      <CommandBar />
-      <div className="w-full h-full pt-[72px]">
-        <Media />
-        <MediaPanel />
-        <Whiteboard />
-        <SidePanel />
+      {/* Ambient Background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-[-30%] left-[-15%] w-[800px] h-[800px] bg-gradient-to-br from-blue-400/15 to-purple-400/15 rounded-full blur-[100px]" />
+        <div className="absolute bottom-[-30%] right-[-15%] w-[600px] h-[600px] bg-gradient-to-br from-pink-400/10 to-orange-400/10 rounded-full blur-[100px]" />
+        <div className="absolute top-[30%] right-[10%] w-[400px] h-[400px] bg-gradient-to-br from-cyan-400/8 to-blue-400/8 rounded-full blur-[80px]" />
+      </div>
+
+      {/* Liquid Glass Meeting Container */}
+      <div className="absolute inset-0 z-10 bg-background/50">
+        <div className="liquid-glass-container !rounded-none !border-none w-full h-full flex flex-col overflow-hidden">
+          {/* Command Bar - Top */}
+          <CommandBar />
+
+          {/* Main Content Area */}
+          <div className="flex-1 relative overflow-hidden">
+            <Media />
+            <MediaPanel />
+            <Whiteboard />
+            <SidePanel />
+          </div>
+        </div>
       </div>
     </Fullscreen>
   )

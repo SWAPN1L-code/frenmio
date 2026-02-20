@@ -11,13 +11,13 @@ export * from '@server/types'
 // TODO Enum keys to reduce socket payload.
 export type ISocketMessageData =
   | {
-    connection: true
-    userName: string
-  }
+      connection: true
+      userName: string
+    }
   | {
-    sdpSignal: unknown
-    metaData: ConnectionMetaData
-  }
+      sdpSignal: unknown
+      metaData: ConnectionMetaData
+    }
 
 type ConnectionMetaData = {
   screenStreamId: string

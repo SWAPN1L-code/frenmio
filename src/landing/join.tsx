@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react'
 import type { FormEvent, FC } from 'react'
 import { useJoinFormState, useLocalState, useRemoteState } from '../state'
 
-interface JoinProps { }
+interface JoinProps {}
 
 const JoinMeeting: FC<JoinProps> = () => {
   const [userNameError, setUserNameError] = useState('')
@@ -24,9 +24,6 @@ const JoinMeeting: FC<JoinProps> = () => {
       }
 
       if (!finalUserName.trim()) {
-        // If still empty, we technically can't join. 
-        // In the specific design case where we hide the input, this is a risk.
-        // We will assume the user interacts with the "Your Name" field above.
         setUserNameError('Please enter your name above')
         return
       }
@@ -36,18 +33,20 @@ const JoinMeeting: FC<JoinProps> = () => {
         loading: true,
         error: null,
       })
-      // Use finalUserName
-      socket.emit('request:join_room', { userName: finalUserName, roomId }, err => {
-        if (err) {
+      socket.emit(
+        'request:join_room',
+        { userName: finalUserName, roomId },
+        err => {
+          if (err) {
+            setState({
+              error: err.message,
+            })
+          }
           setState({
-            error: err.message,
+            loading: false,
           })
-        }
-        setState({
-          loading: false,
-        })
-        // should redirect to room via event listener in Eagle component
-      })
+        },
+      )
 
       useLocalState.setState({
         preferences: {
@@ -60,25 +59,35 @@ const JoinMeeting: FC<JoinProps> = () => {
   )
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-4">
-      <input
-        className="flex-grow bg-muted-beige/40 dark:bg-white/5 border-0 rounded-xl py-4.5 px-6 text-base focus:ring-2 focus:ring-primary/40 placeholder:text-accent-brown/20 focus:outline-none"
-        value={roomId}
-        onChange={e => setState({ roomId: e.target.value })}
-        placeholder="Meeting code"
-        required
-      />
+    <div className="space-y-2">
+      <form onSubmit={handleSubmit} className="flex gap-3">
+        <input
+          className="flex-grow glass-input"
+          value={roomId}
+          onChange={e => {
+            setState({ roomId: e.target.value })
+            if (userNameError) setUserNameError('')
+          }}
+          placeholder="Enter a code or link"
+          required
+        />
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="px-8 bg-accent-brown dark:bg-white/10 hover:bg-black dark:hover:bg-white/20 text-white font-bold rounded-xl transition-all active:scale-[0.98]"
-      >
-        {loading ? (
-          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-        ) : 'Join'}
-      </button>
-    </form>
+        <button
+          type="submit"
+          disabled={loading}
+          className="glass-button-secondary px-6"
+        >
+          {loading ? (
+            <div className="w-5 h-5 border-2 border-foreground/30 border-t-foreground rounded-full animate-spin" />
+          ) : (
+            'Join'
+          )}
+        </button>
+      </form>
+      {!!(userNameError || error) && (
+        <p className="text-xs text-red-500">{userNameError || error}</p>
+      )}
+    </div>
   )
 }
 

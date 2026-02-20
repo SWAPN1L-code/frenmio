@@ -1,98 +1,31 @@
-import { FC, useState } from 'react'
-import { Stack, Toggle } from '@fluentui/react'
+import { FC, useEffect, useRef } from 'react'
 
-import Video from '../comps/video'
-import { classes } from './styles'
-import {
-  dummyAudioDevice,
-  dummyVideoDevice,
-  startMediaDevice,
-  stopMediaDevice,
-  useCreateFormState,
-  useJoinFormState,
-  useLocalState,
-} from '../state'
-import { commonClasses } from '../utils/theme/common-styles'
+export const PreviewMedia: FC<{ stream: MediaStream }> = ({ stream }) => {
+  const videoRef = useRef<HTMLVideoElement>(null)
 
-const VideoPreview: FC = () => {
-  const [mediaBtnsDisabled, setMediaBtnsDisabled] = useState(false)
-  const [
-    userStream,
-    currentCameraId,
-    currentMicId,
-    audioDevices,
-    videoDevices,
-  ] = useLocalState(state => [
-    state.userStream,
-    state.currentCameraId,
-    state.currentMicId,
-    state.audioDevices,
-    state.videoDevices,
-  ])
-  const [createPageName] = useCreateFormState(state => [state.userName])
-  const [joinPageName] = useJoinFormState(state => [state.userName])
-  const userName = createPageName || joinPageName
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video) return
 
-  const audioDevice = audioDevices.find(d => d.deviceId === currentMicId)
-  const videoDevice = videoDevices.find(d => d.deviceId === currentCameraId)
+    video.srcObject = stream
 
-  const mediaInfo = [videoDevice?.label, audioDevice?.label]
-    .filter(Boolean)
-    .join('\n')
-    .trim()
+    const playPromise = video.play()
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {
+        // Suppress initial autoplay errors if blocked by browser, 
+        // the user can explicitly trigger it later if needed.
+        console.warn('Autoplay prevented')
+      })
+    }
+  }, [stream])
+
   return (
-    <Stack grow className={classes.preview}>
-      <Stack horizontal horizontalAlign="space-between">
-        <Toggle
-          className={commonClasses.mr4}
-          onChange={async (_, checked) => {
-            setMediaBtnsDisabled(true)
-            if (checked) {
-              await startMediaDevice(audioDevices[0] || dummyAudioDevice)
-            } else {
-              stopMediaDevice(audioDevices[0] || dummyAudioDevice)
-            }
-            setMediaBtnsDisabled(false)
-          }}
-          checked={!!currentMicId}
-          inlineLabel
-          label="Audio"
-          onText="On"
-          disabled={mediaBtnsDisabled}
-          offText="Off"
-        />
-        <Toggle
-          onChange={async (_, checked) => {
-            setMediaBtnsDisabled(true)
-
-            if (checked) {
-              await startMediaDevice(videoDevices[0] || dummyVideoDevice)
-            } else {
-              stopMediaDevice(videoDevices[0] || dummyVideoDevice)
-            }
-
-            setMediaBtnsDisabled(false)
-          }}
-          checked={!!currentCameraId}
-          inlineLabel
-          label="Video"
-          onText="On"
-          disabled={mediaBtnsDisabled}
-          offText="Off"
-        />
-      </Stack>
-      <Stack.Item className={classes.mediaContainer}>
-        <Video
-          stream={userStream}
-          info={mediaInfo}
-          personaText={userName}
-          label={currentCameraId || currentMicId ? 'You' : 'Media preview'}
-          noContextualMenu
-          muted
-        />
-      </Stack.Item>
-    </Stack>
+    <video
+      ref={videoRef}
+      autoPlay
+      playsInline
+      muted
+      className="w-full h-full object-cover scale-x-[-1]"
+    />
   )
 }
-
-export default VideoPreview

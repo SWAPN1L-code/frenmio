@@ -1,19 +1,28 @@
-import { FC, useEffect, useRef, useState } from 'react'
+import { FC, FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 import fscreen from 'fscreen'
-import Header from './header'
-import CreateMeeting from './create'
-import JoinMeeting from './join'
 import {
+  IRoom,
+  useCreateFormState,
+  useJoinFormState,
   useLocalState,
+  useRemoteState,
   startMediaDevice,
   stopMediaDevice,
-  dummyAudioDevice,
-  dummyVideoDevice,
+  updateDevicesList,
 } from '../state'
+import { PreviewMedia } from './preview'
+
+const AUTH_SESSION_KEY = 'frenmio-auth'
 
 const Landing: FC = () => {
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const [showSetup, setShowSetup] = useState(false)
+  const [authName, setAuthName] = useState('')
+  const [authCode, setAuthCode] = useState('')
+  const [authError, setAuthError] = useState('')
+  const [authenticated, setAuthenticated] = useState(
+    () => sessionStorage.getItem(AUTH_SESSION_KEY) === '1',
+  )
+
+  const autoStartTriedRef = useRef(false)
 
   const [
     userStream,
@@ -21,265 +30,317 @@ const Landing: FC = () => {
     currentCameraId,
     audioDevices,
     videoDevices,
+    preferences,
   ] = useLocalState(state => [
     state.userStream,
     state.currentMicId,
     state.currentCameraId,
     state.audioDevices,
     state.videoDevices,
+    state.preferences,
   ])
 
-  useEffect(() => {
-    if (fscreen.fullscreenElement) fscreen.exitFullscreen()
-  }, [])
+  const socket = useRemoteState(state => state.socket)
+
+  const { loading: createLoading, error: createError, meetingName, userName } = useCreateFormState()
+  const setCreateState = useCreateFormState.setState
+
+  const { loading: joinLoading, error: joinError, roomId } = useJoinFormState()
+  const setJoinState = useJoinFormState.setState
+
+  const hasLiveVideoTrack = userStream
+    .getVideoTracks()
+    .some(track => track.enabled && track.readyState === 'live')
+
+  const hasMicActive = !!currentMicId
 
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.srcObject = userStream
+    if (fscreen.fullscreenElement) {
+      fscreen.exitFullscreen()
     }
-  }, [userStream])
+    updateDevicesList().catch(() => { })
+  }, [])
+
+  // Auto-start camera
+  useEffect(() => {
+    if (!authenticated || hasLiveVideoTrack || autoStartTriedRef.current || !videoDevices.length) {
+      return
+    }
+    autoStartTriedRef.current = true
+    void startMediaDevice(videoDevices[0])
+  }, [authenticated, hasLiveVideoTrack, videoDevices])
 
   const toggleMic = async () => {
     if (currentMicId) {
       const device = audioDevices.find(d => d.deviceId === currentMicId)
       if (device) stopMediaDevice(device)
-      else stopMediaDevice(dummyAudioDevice)
-    } else {
-      await startMediaDevice(audioDevices[0] || dummyAudioDevice)
+      return
+    }
+    if (audioDevices.length) {
+      await startMediaDevice(audioDevices[0])
     }
   }
 
   const toggleCam = async () => {
-    if (currentCameraId) {
-      const device = videoDevices.find(d => d.deviceId === currentCameraId)
-      if (device) stopMediaDevice(device)
-      else stopMediaDevice(dummyVideoDevice)
-    } else {
-      await startMediaDevice(videoDevices[0] || dummyVideoDevice)
+    if (hasLiveVideoTrack || currentCameraId) {
+      const activeDevice = videoDevices.find(d => d.deviceId === currentCameraId)
+      if (activeDevice) {
+        stopMediaDevice(activeDevice)
+      } else {
+        userStream.getVideoTracks().forEach(track => {
+          const fallbackDevice = videoDevices.find(
+            device => device.deviceId === track.getSettings().deviceId,
+          )
+          if (fallbackDevice) {
+            stopMediaDevice(fallbackDevice)
+          } else {
+            track.stop()
+            userStream.removeTrack(track)
+          }
+        })
+      }
+      return
+    }
+
+    await updateDevicesList()
+    const firstVideoDevice = useLocalState.getState().videoDevices[0]
+    if (firstVideoDevice) {
+      await startMediaDevice(firstVideoDevice)
     }
   }
 
-  const changeAudioInput = async (deviceId: string) => {
-    if (currentMicId) {
-      const oldDevice = audioDevices.find(d => d.deviceId === currentMicId)
-      if (oldDevice) stopMediaDevice(oldDevice)
+  const handleAuthSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!authName.trim()) {
+      setAuthError('Name is required.')
+      return
     }
-    const newDevice = audioDevices.find(d => d.deviceId === deviceId)
-    if (newDevice) await startMediaDevice(newDevice)
+    if (authCode.trim().length < 4) {
+      setAuthError('Passcode must be at least 4 characters.')
+      return
+    }
+
+    useLocalState.setState({
+      preferences: { ...preferences, userName: authName.trim() },
+    })
+    setCreateState({ userName: authName.trim() })
+    setJoinState({ userName: authName.trim() })
+
+    sessionStorage.setItem(AUTH_SESSION_KEY, '1')
+    setAuthenticated(true)
+    setAuthError('')
   }
 
-  const changeVideoInput = async (deviceId: string) => {
-    if (currentCameraId) {
-      const oldDevice = videoDevices.find(d => d.deviceId === currentCameraId)
-      if (oldDevice) stopMediaDevice(oldDevice)
-    }
-    const newDevice = videoDevices.find(d => d.deviceId === deviceId)
-    if (newDevice) await startMediaDevice(newDevice)
-  }
+  const handleCreateMeeting = useCallback(
+    (e: FormEvent<HTMLFormElement>) => {
+      e.preventDefault()
+      if (createLoading) return
 
-  return (
-    <div className="flex items-center justify-center min-h-screen bg-background-light dark:bg-background-dark text-accent-brown dark:text-background-light transition-colors duration-300 font-sans overflow-hidden">
-      <div className="aspect-[16/9] max-h-screen w-full flex flex-col relative mx-auto">
-        <Header />
+      const finalUserName = userName || preferences.userName || 'Guest'
+      if (!finalUserName.trim()) return
 
-        <main className="flex-grow flex items-center px-16 pb-12 overflow-hidden">
-          <div className="grid grid-cols-12 gap-16 w-full items-center">
-            {/* Left Column (Hero) */}
-            <div className="col-span-6 flex flex-col justify-center space-y-12">
-              <div className="space-y-8">
-                <div className="inline-flex items-center px-6 py-2 rounded-full bg-primary/10 text-primary text-xs font-bold tracking-[0.2em] uppercase">
-                  Purely Peer-to-Peer
-                </div>
-                <h1 className="text-[6.5rem] leading-[0.9] font-bold tracking-tighter text-accent-brown dark:text-white font-display">
-                  Connect <br />
-                  <span className="text-primary italic font-medium">Naturally.</span>
-                </h1>
-                <p className="text-2xl opacity-70 font-light leading-relaxed max-w-xl">
-                  Meetings shouldn't feel cold. Experience crystal clear video in a
-                  space designed for warmth, privacy, and genuine human connection.
-                </p>
-              </div>
+      setCreateState({ loading: true, error: null })
 
-              <div className="flex flex-col space-y-10">
-                <div className="flex items-center space-x-12">
-                  <div className="flex items-center space-x-4">
-                    <span className="material-symbols-outlined text-primary text-4xl">
-                      verified_user
-                    </span>
-                    <span className="text-base font-semibold opacity-80">
-                      E2E Encrypted
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <span className="material-symbols-outlined text-primary text-4xl">
-                      eco
-                    </span>
-                    <span className="text-base font-semibold opacity-80">
-                      Eco-friendly
-                    </span>
-                  </div>
-                </div>
+      const room: IRoom = {
+        id: '',
+        name: meetingName || 'New Meeting',
+        created_by: finalUserName,
+        opts: { capacity: 10 },
+      }
 
-                <div className="flex items-center space-x-6">
-                  <div className="flex -space-x-3">
-                    {[1, 2, 3].map(i => (
-                      <div
-                        key={i}
-                        className="w-14 h-14 rounded-full border-4 border-background-light dark:border-background-dark bg-muted-beige flex items-center justify-center text-xs font-bold text-accent-brown"
-                      >
-                        {/* Avatar */}
-                      </div>
-                    ))}
-                    <div className="w-14 h-14 rounded-full border-4 border-background-light dark:border-background-dark bg-muted-beige flex items-center justify-center text-xs font-bold text-accent-brown/60">
-                      +12k
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold tracking-wide text-accent-brown dark:text-white/80 uppercase">
-                      Trusted Globally
-                    </p>
-                    <p className="text-xs opacity-50 font-medium">
-                      Used by teams at the world's best studios
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
+      socket.emit('request:create_room', { room }, err => {
+        if (err) setCreateState({ error: err.message })
+        setCreateState({ loading: false })
+      })
 
-            {/* Right Column (Card) */}
-            <div className="col-span-6 flex justify-end">
-              <div className="bg-white dark:bg-white/5 p-10 rounded-2xl shadow-[0_40px_100px_-12px_rgba(163,92,59,0.12)] border border-white dark:border-white/10 backdrop-blur-md w-full max-w-[560px]">
-                {/* Video Preview */}
-                <div className="relative rounded-xl overflow-hidden bg-muted-beige dark:bg-accent-brown aspect-video mb-10 group shadow-inner">
-                  {currentCameraId ? (
-                    <video
-                      key={currentCameraId}
-                      ref={videoRef}
-                      autoPlay
-                      muted
-                      playsInline
-                      className="w-full h-full object-cover transform scale-x-[-1]"
-                    />
-                  ) : (
-                    <img
-                      alt="Camera preview"
-                      className="w-full h-full object-cover grayscale-[20%] opacity-90 transition-transform duration-700 group-hover:scale-105"
-                      src="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80"
-                    />
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60"></div>
+      useLocalState.setState({
+        preferences: { ...preferences, userName: finalUserName, meetingName },
+      })
+    },
+    [createLoading, meetingName, preferences, setCreateState, socket, userName],
+  )
 
-                  {/* Controls Overlay */}
-                  <div className="absolute top-4 right-4 flex space-x-2.5 z-20">
-                    {/* Setup Trigger */}
-                    <div className="relative">
-                      <button
-                        onClick={() => setShowSetup(!showSetup)}
-                        className="w-11 h-11 rounded-full bg-black/50 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/80 transition-all active:scale-95"
-                      >
-                        <span className="material-symbols-outlined text-xl">settings</span>
-                      </button>
-                      {showSetup && (
-                        <div className="absolute top-full mt-2 right-0 p-4 bg-white dark:bg-[#1A1614] rounded-xl shadow-2xl border border-muted-beige dark:border-white/10 z-50 text-left space-y-4 w-56">
-                          <div className="space-y-1">
-                            <label className="text-[9px] font-bold uppercase text-primary">Microphone</label>
-                            <select
-                              className="w-full text-xs p-2 rounded-lg bg-muted-beige/50 border-none truncate"
-                              value={currentMicId || ''}
-                              onChange={(e) => changeAudioInput(e.target.value)}
-                            >
-                              {audioDevices.map(d => (
-                                <option key={d.deviceId} value={d.deviceId}>{d.label || 'Default Mic'}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <div className="space-y-1">
-                            <label className="text-[9px] font-bold uppercase text-primary">Camera</label>
-                            <select
-                              className="w-full text-xs p-2 rounded-lg bg-muted-beige/50 border-none truncate"
-                              value={currentCameraId || ''}
-                              onChange={(e) => changeVideoInput(e.target.value)}
-                            >
-                              {videoDevices.map(d => (
-                                <option key={d.deviceId} value={d.deviceId}>{d.label || 'Default Camera'}</option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    <button
-                      onClick={toggleMic}
-                      className={`w-11 h-11 rounded-full text-white flex items-center justify-center hover:bg-black/80 transition-all active:scale-95 ${!currentMicId ? 'bg-red-500' : 'bg-black/50 backdrop-blur-md'}`}
-                    >
-                      <span className="material-symbols-outlined text-xl">
-                        {currentMicId ? 'mic' : 'mic_off'}
-                      </span>
-                    </button>
-                    <button
-                      onClick={toggleCam}
-                      className={`w-11 h-11 rounded-full text-white flex items-center justify-center hover:bg-black/80 transition-all active:scale-95 ${!currentCameraId ? 'bg-red-500' : 'bg-black/50 backdrop-blur-md'}`}
-                    >
-                      <span className="material-symbols-outlined text-xl">
-                        {currentCameraId ? 'videocam' : 'videocam_off'}
-                      </span>
-                    </button>
-                  </div>
+  const handleJoinMeeting = useCallback(
+    (e: FormEvent<HTMLFormElement>) => {
+      e.preventDefault()
+      if (joinLoading || !roomId.trim()) return
 
-                  <div className="absolute bottom-4 left-4 flex items-center space-x-3 px-4 py-2 rounded-xl bg-black/50 backdrop-blur-md text-white text-[11px] font-bold tracking-widest uppercase">
-                    <span className={`w-2 h-2 rounded-full ${currentCameraId ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></span>
-                    <span>{currentCameraId ? 'Live Preview' : 'Camera Off'}</span>
-                  </div>
-                </div>
+      const finalUserName = userName || preferences.userName || 'Guest'
 
-                <div className="space-y-6">
-                  {/* Forms */}
-                  <CreateMeeting />
+      setJoinState({ loading: true, error: null })
 
-                  <div className="relative flex items-center py-2">
-                    <div className="flex-grow border-t border-muted-beige dark:border-white/10"></div>
-                    <span className="flex-shrink mx-6 text-[10px] font-bold opacity-30 tracking-[0.4em] uppercase">
-                      OR
-                    </span>
-                    <div className="flex-grow border-t border-muted-beige dark:border-white/10"></div>
-                  </div>
+      socket.emit(
+        'request:join_room',
+        { userName: finalUserName, roomId: roomId.trim() },
+        err => {
+          if (err) setJoinState({ error: err.message })
+          setJoinState({ loading: false })
+        },
+      )
 
-                  <JoinMeeting />
-                </div>
-              </div>
-            </div>
+      useLocalState.setState({
+        preferences: { ...preferences, userName: finalUserName },
+      })
+    },
+    [joinLoading, preferences, roomId, setJoinState, socket, userName],
+  )
+
+  // Auth screen
+  if (!authenticated) {
+    return (
+      <div className="gmeet-lobby">
+        <header className="gmeet-lobby-header">
+          <div className="gmeet-logo">
+            <svg viewBox="0 0 24 24" width="32" height="32" fill="#1a73e8">
+              <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z" />
+            </svg>
+            <span>Frenmio</span>
+          </div>
+        </header>
+        <main className="gmeet-lobby-main" style={{ justifyContent: 'center' }}>
+          <div className="gmeet-lobby-auth">
+            <h1>Welcome to Frenmio</h1>
+            <p>Enter your details to continue</p>
+            <form onSubmit={handleAuthSubmit}>
+              <input
+                value={authName}
+                onChange={e => { setAuthName(e.target.value); setAuthError('') }}
+                placeholder="Your name"
+                className="gmeet-lobby-input"
+              />
+              <input
+                type="password"
+                value={authCode}
+                onChange={e => { setAuthCode(e.target.value); setAuthError('') }}
+                placeholder="Passcode"
+                className="gmeet-lobby-input"
+              />
+              {authError && <p className="gmeet-error">{authError}</p>}
+              <button type="submit" className="gmeet-btn-primary" style={{ width: '100%', marginTop: 8 }}>
+                Continue
+              </button>
+            </form>
           </div>
         </main>
+      </div>
+    )
+  }
 
-        <footer className="w-full px-16 py-10 flex justify-between items-center z-20 text-[11px] font-bold tracking-[0.2em] uppercase opacity-40 text-accent-brown dark:text-white">
-          <div className="flex items-center space-x-4">
-            <div className="px-2 py-1 bg-accent-brown dark:bg-white/20 rounded text-white dark:text-background-light text-[9px]">
-              FN
-            </div>
-            <span>Frenmio © 2024 — Designed for Connection</span>
-          </div>
-          <div className="flex space-x-12">
-            <a className="hover:text-primary transition-colors" href="#">
-              Privacy
-            </a>
-            <a className="hover:text-primary transition-colors" href="#">
-              Terms
-            </a>
-            <a className="hover:text-primary transition-colors" href="#">
-              Status
-            </a>
-          </div>
-        </footer>
+  // Pre-meeting lobby with video preview
+  return (
+    <div className="gmeet-lobby">
+      <header className="gmeet-lobby-header">
+        <div className="gmeet-logo">
+          <svg viewBox="0 0 24 24" width="32" height="32" fill="#1a73e8">
+            <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z" />
+          </svg>
+          <span>Frenmio</span>
+        </div>
+      </header>
 
-        <div className="absolute bottom-10 right-10 z-50 pointer-events-none hidden lg:block">
-          <div className="bg-white dark:bg-accent-brown px-6 py-3.5 rounded-full shadow-2xl flex items-center space-x-3 border border-muted-beige dark:border-white/5">
-            <span className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.6)]"></span>
-            <span className="text-[10px] font-bold opacity-70 tracking-widest uppercase text-accent-brown dark:text-white">
-              P2P Network Active
-            </span>
+      <main className="gmeet-lobby-main">
+        {/* Video Preview Section */}
+        <div className="gmeet-lobby-preview">
+          <div className="gmeet-video-container">
+            {hasLiveVideoTrack ? (
+              <PreviewMedia stream={userStream} />
+            ) : (
+              <div className="gmeet-video-placeholder">
+                <div className="gmeet-avatar-large">
+                  {(userName || preferences.userName || 'G').slice(0, 1).toUpperCase()}
+                </div>
+                <p>Camera is off</p>
+              </div>
+            )}
+          </div>
+
+          {/* Media Controls */}
+          <div className="gmeet-media-controls">
+            <button
+              onClick={toggleMic}
+              className={`gmeet-control-btn ${!hasMicActive ? 'off' : ''}`}
+              title={hasMicActive ? 'Turn off microphone' : 'Turn on microphone'}
+            >
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                {hasMicActive ? (
+                  <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+                ) : (
+                  <path d="M19 11h-1.7c0 .74-.16 1.43-.43 2.05l1.23 1.23c.56-.98.9-2.09.9-3.28zm-4.02.17c0-.06.02-.11.02-.17V5c0-1.66-1.34-3-3-3S9 3.34 9 5v.18l5.98 5.99zM4.27 3L3 4.27l6.01 6.01V11c0 1.66 1.33 3 2.99 3 .22 0 .44-.03.65-.08l1.66 1.66c-.71.33-1.5.52-2.31.52-2.76 0-5.3-2.1-5.3-5.1H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c.91-.13 1.77-.45 2.54-.9L19.73 21 21 19.73 4.27 3z" />
+                )}
+              </svg>
+            </button>
+            <button
+              onClick={toggleCam}
+              className={`gmeet-control-btn ${!hasLiveVideoTrack ? 'off' : ''}`}
+              title={hasLiveVideoTrack ? 'Turn off camera' : 'Turn on camera'}
+            >
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                {hasLiveVideoTrack ? (
+                  <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z" />
+                ) : (
+                  <path d="M21 6.5l-4 4V7c0-.55-.45-1-1-1H9.82L21 17.18V6.5zM3.27 2L2 3.27 4.73 6H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.21 0 .39-.08.54-.18L19.73 21 21 19.73 3.27 2z" />
+                )}
+              </svg>
+            </button>
           </div>
         </div>
-      </div>
+
+        {/* Form Section */}
+        <div className="gmeet-lobby-form">
+          <h2>Ready to join?</h2>
+
+          <form onSubmit={handleCreateMeeting}>
+            <label className="gmeet-label">Your name</label>
+            <input
+              value={userName}
+              onChange={e => setCreateState({ userName: e.target.value })}
+              placeholder="Enter your name"
+              className="gmeet-lobby-input"
+            />
+
+            <label className="gmeet-label">Room name</label>
+            <input
+              value={meetingName}
+              onChange={e => setCreateState({ meetingName: e.target.value })}
+              placeholder="Enter room name"
+              className="gmeet-lobby-input"
+            />
+
+            {createError && <p className="gmeet-error">{createError}</p>}
+
+            <button
+              type="submit"
+              disabled={createLoading}
+              className="gmeet-btn-primary"
+              style={{ width: '100%', marginTop: 16 }}
+            >
+              {createLoading ? 'Creating...' : 'Create Meeting'}
+            </button>
+          </form>
+
+          <div className="gmeet-divider">
+            <span>or join existing</span>
+          </div>
+
+          <form onSubmit={handleJoinMeeting}>
+            <input
+              value={roomId}
+              onChange={e => setJoinState({ roomId: e.target.value })}
+              placeholder="Enter meeting code"
+              className="gmeet-lobby-input"
+            />
+            {joinError && <p className="gmeet-error">{joinError}</p>}
+            <button
+              type="submit"
+              disabled={joinLoading || !roomId.trim()}
+              className="gmeet-btn-secondary"
+              style={{ width: '100%', marginTop: 8 }}
+            >
+              {joinLoading ? 'Joining...' : 'Join Meeting'}
+            </button>
+          </form>
+        </div>
+      </main>
     </div>
   )
 }

@@ -26,7 +26,7 @@ module.exports = {
                     DEFAULT: "hsl(var(--primary))",
                     foreground: "hsl(var(--primary-foreground))",
                     // New colors from design
-                    base: "#A35C3B", // Terracotta Brown
+                    base: "#000000", // Was Terracotta Brown
                 },
                 secondary: {
                     DEFAULT: "hsl(var(--secondary))",
@@ -40,13 +40,13 @@ module.exports = {
                     DEFAULT: "hsl(var(--muted))",
                     foreground: "hsl(var(--muted-foreground))",
                     // New colors
-                    beige: "#F0EDE4",
+                    beige: "#f5f5f7", // Apple-like light grey
                 },
                 accent: {
                     DEFAULT: "hsl(var(--accent))",
                     foreground: "hsl(var(--accent-foreground))",
                     // New colors
-                    brown: "#3D2B1F",
+                    brown: "#000000", // Black
                 },
                 popover: {
                     DEFAULT: "hsl(var(--popover))",
@@ -57,8 +57,8 @@ module.exports = {
                     foreground: "hsl(var(--card-foreground))",
                 },
                 // Custom descriptive names
-                "background-light": "#F9F7F2",
-                "background-dark": "#1A1614",
+                "background-light": "#ffffff",
+                "background-dark": "#000000",
             },
             borderRadius: {
                 lg: "var(--radius)",
@@ -85,6 +85,11 @@ module.exports = {
             animation: {
                 "accordion-down": "accordion-down 0.2s ease-out",
                 "accordion-up": "accordion-up 0.2s ease-out",
+            },
+            boxShadow: {
+                'glass': '0 8px 32px rgba(0, 0, 0, 0.04)',
+                'glass-hover': '0 16px 48px rgba(0, 0, 0, 0.08)',
+                'glass-btn': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
             },
         },
     },

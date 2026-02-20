@@ -1,4 +1,4 @@
-import { FC, useContext, useState, useEffect } from 'react'
+import { FC, useState, useEffect } from 'react'
 import {
   Mic,
   MicOff,
@@ -8,20 +8,15 @@ import {
   MonitorOff,
   MessageSquare,
   Users,
-  Maximize,
-  Minimize,
   PhoneOff,
-  Copy,
-  Info,
-  Check,
-  Sun,
-  Moon,
   Shield,
   Smile,
   Hand,
   MoreHorizontal,
   LayoutGrid,
-  ChevronDown
+  ChevronDown,
+  Sun,
+  Moon,
 } from 'lucide-react'
 import {
   requestLeaveRoom,
@@ -34,10 +29,9 @@ import {
   dummyAudioDevice,
   dummyVideoDevice,
 } from '../../state'
-import { ColorSchemeContext } from '../../utils/theme/theme-context'
-import { useCopyToClipboard } from '../../hooks/use-copy-to-clipboard'
-import InfoCallout from '../../comps/info-overlay'
 import toast, { ToastType } from '../../comps/toast'
+import React, { useContext } from 'react'
+import { ColorSchemeContext } from '../../utils/theme/theme-context'
 
 interface ControlButtonProps {
   icon: FC<{ className?: string }>
@@ -94,7 +88,9 @@ const Timer: FC = () => {
     const start = Date.now()
     const timer = setInterval(() => {
       const diff = Math.floor((Date.now() - start) / 1000)
-      const m = Math.floor(diff / 60).toString().padStart(2, '0')
+      const m = Math.floor(diff / 60)
+        .toString()
+        .padStart(2, '0')
       const s = (diff % 60).toString().padStart(2, '0')
       setTime(`${m}:${s}`)
     }, 1000)
@@ -105,16 +101,9 @@ const Timer: FC = () => {
 }
 
 const MyCommandBar: FC = () => {
-  const { setColorScheme, colorScheme } = useContext(ColorSchemeContext)
-  const [showInfo, setShowInfo] = useState(false)
-  const [copied, copy] = useCopyToClipboard()
-
   // Popups state
   const [showReactions, setShowReactions] = useState(false)
   const [showMore, setShowMore] = useState(false)
-
-  const room = useRemoteState(state => state.room)
-  const link = room ? `${window.location.origin}/room/${room.id}` : ''
 
   // State handlers
   const toggleChats = () =>
@@ -124,10 +113,6 @@ const MyCommandBar: FC = () => {
   const togglePeople = () =>
     useLocalState.setState(s => ({
       sidePanelTab: s.sidePanelTab === 'people' ? undefined : 'people',
-    }))
-  const toggleFullscreen = () =>
-    useLocalState.setState(s => ({
-      fullscreenEnabled: !s.fullscreenEnabled,
     }))
   const toggleWhiteboard = () =>
     useLocalState.setState(s => ({
@@ -148,7 +133,6 @@ const MyCommandBar: FC = () => {
     audioDevices,
     videoDevices,
     displayStreamActive,
-    fullscreenEnabled,
     whiteboardActive,
     handRaised,
   ] = useLocalState(state => [
@@ -157,7 +141,6 @@ const MyCommandBar: FC = () => {
     state.audioDevices,
     state.videoDevices,
     state.screenMediaActive,
-    state.fullscreenEnabled,
     state.whiteboardActive,
     state.handRaised,
   ])
@@ -165,6 +148,17 @@ const MyCommandBar: FC = () => {
   const connections = useRemoteState(state => state.connections)
   const isRemoteDisplay = connections.some(c => !c.displayStream.empty)
   const [mediaBtnsDisabled, setMediaBtnsDisabled] = useState(false)
+
+  // Theme Context 
+  const { colorScheme, setColorScheme } = useContext(ColorSchemeContext)
+  const isDark = colorScheme === 'dark'
+
+  const toggleTheme = () => {
+    const newTheme = isDark ? 'light' : 'dark'
+    setColorScheme(newTheme)
+    document.documentElement.classList.remove('light', 'dark')
+    document.documentElement.classList.add(newTheme)
+  }
 
   // Media handlers (Audio/Video/Screen)
   const handleAudio = async () => {
@@ -207,9 +201,22 @@ const MyCommandBar: FC = () => {
       <div className="fixed top-0 left-0 w-full h-[72px] bg-white border-b border-gray-200 z-[101] px-4 flex items-center justify-between shadow-sm">
         {/* Left: Security & Timer */}
         <div className="flex items-center gap-4">
-          <Shield className="w-5 h-5 text-gray-600" />
-          <div className="h-6 w-px bg-gray-300 mx-2" />
+          <Shield className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+          <div className="h-6 w-px bg-gray-300 dark:bg-gray-700 mx-2" />
           <Timer />
+
+          {/* Theme Toggle Button */}
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            title={`Switch to ${isDark ? 'light' : 'dark'} mode`}
+          >
+            {isDark ? (
+              <Sun className="w-5 h-5 text-yellow-400" />
+            ) : (
+              <Moon className="w-5 h-5 text-gray-600" />
+            )}
+          </button>
         </div>
 
         {/* Right: Controls */}
@@ -219,11 +226,7 @@ const MyCommandBar: FC = () => {
             label="Chat"
             onClick={toggleChats}
           />
-          <ControlButton
-            icon={Users}
-            label="People"
-            onClick={togglePeople}
-          />
+          <ControlButton icon={Users} label="People" onClick={togglePeople} />
           <ControlButton
             icon={MonitorUp}
             label="Whiteboard"
@@ -274,7 +277,9 @@ const MyCommandBar: FC = () => {
             />
             {showMore && (
               <div className="absolute top-full mt-2 right-0 bg-white shadow-xl rounded-lg p-3 w-48 border border-gray-100 z-50">
-                <p className="text-sm text-gray-500 text-center">More features coming soon!</p>
+                <p className="text-sm text-gray-500 text-center">
+                  More features coming soon!
+                </p>
               </div>
             )}
           </div>
@@ -318,14 +323,6 @@ const MyCommandBar: FC = () => {
           />
         </div>
       </div>
-
-      {showInfo && (
-        <InfoCallout
-          onDismiss={() => setShowInfo(false)}
-          target=".glass" // approximate target
-          showFooter
-        />
-      )}
     </>
   )
 }
