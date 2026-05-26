@@ -19,10 +19,7 @@ import { MediaPanel } from './media/panel'
 import Whiteboard from '../comps/whiteboard'
 
 const App: FC = () => {
-  const [socket, connections] = useRemoteState(state => [
-    state.socket,
-    state.connections,
-  ])
+  const socket = useRemoteState(state => state.socket)
 
   const onPersonJoined: IServerToClientEvent['action:establish_peer_connection'] =
     useCallback(({ userId, userName }) => {
@@ -34,38 +31,39 @@ const App: FC = () => {
     }, [])
 
   const onMessage: IServerToClientEvent<ISocketMessageData>['action:message_received'] =
-    useCallback(
-      ({ from, data }) => {
-        if ('connection' in data) {
-          createRemoteConnection({
-            userId: from,
-            initiator: true,
-            userName: data.userName || '',
-          })
-        } else if ('sdpSignal' in data) {
-          const conn = connections.find(c => c.userId === from)
-          if (!conn) return
-          try {
-            conn.metaData = data.metaData
-            conn.peerInstance.signal(data.sdpSignal as string)
-          } catch (error) {
-            console.error('sdp signal error:', error)
-          }
+    useCallback(({ from, data }) => {
+      if ('connection' in data) {
+        createRemoteConnection({
+          userId: from,
+          initiator: true,
+          userName: data.userName || '',
+        })
+      } else if ('sdpSignal' in data) {
+        const { connections } = useRemoteState.getState()
+        const conn = connections.find(c => c.userId === from)
+        if (!conn) {
+          console.warn(
+            `sdp signal received for user ${from} but no connection exists.`,
+          )
+          return
         }
-      },
-      [connections],
-    )
+        try {
+          conn.metaData = data.metaData
+          conn.peerInstance.signal(data.sdpSignal as string)
+        } catch (error) {
+          console.error('sdp signal error:', error)
+        }
+      }
+    }, [])
 
   const onPersonLeft: IServerToClientEvent['action:terminate_peer_connection'] =
-    useCallback(
-      ({ userId }) => {
-        const conn = connections.find(c => c.userId === userId)
-        if (!conn) return
-        toast(`${conn?.userName} left the meeting`)
-        destroyRemoteConnection(conn)
-      },
-      [connections],
-    )
+    useCallback(({ userId }) => {
+      const { connections } = useRemoteState.getState()
+      const conn = connections.find(c => c.userId === userId)
+      if (!conn) return
+      toast(`${conn?.userName} left the meeting`)
+      destroyRemoteConnection(conn)
+    }, [])
 
   useEffect(() => {
     socket.on('action:establish_peer_connection', onPersonJoined)
