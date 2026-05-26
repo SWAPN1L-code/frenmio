@@ -85,6 +85,7 @@ export interface VideoBoxProps extends VideoHTMLAttributes<HTMLVideoElement> {
   personaText?: string
   noContextualMenu?: boolean
   info?: string
+  avatarUrl?: string
 }
 
 const VideoBox: FC<VideoBoxProps> = ({
@@ -93,6 +94,7 @@ const VideoBox: FC<VideoBoxProps> = ({
   personaText,
   noContextualMenu,
   info,
+  avatarUrl,
   flip = true,
   ...props
 }) => {
@@ -200,6 +202,7 @@ const VideoBox: FC<VideoBoxProps> = ({
               initialsColor={
                 stream.empty ? PersonaInitialsColor.gray : undefined
               }
+              imageUrl={avatarUrl}
               text={personaText || label}
               size={PersonaSize.size72}
             />

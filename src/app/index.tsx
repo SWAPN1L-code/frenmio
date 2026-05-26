@@ -22,11 +22,12 @@ const App: FC = () => {
   const socket = useRemoteState(state => state.socket)
 
   const onPersonJoined: IServerToClientEvent['action:establish_peer_connection'] =
-    useCallback(({ userId, userName }) => {
+    useCallback(({ userId, userName, avatarUrl }) => {
       createRemoteConnection({
         userId,
         userName,
         initiator: false,
+        avatarUrl,
       })
     }, [])
 
@@ -37,6 +38,7 @@ const App: FC = () => {
           userId: from,
           initiator: true,
           userName: data.userName || '',
+          avatarUrl: data.avatarUrl,
         })
       } else if ('sdpSignal' in data) {
         const { connections } = useRemoteState.getState()

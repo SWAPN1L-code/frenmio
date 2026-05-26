@@ -53,6 +53,112 @@ const Landing: FC = () => {
   const { loading: joinLoading, error: joinError, roomId } = useJoinFormState()
   const setJoinState = useJoinFormState.setState
 
+  const handleGoogleCredentialResponse = useCallback(
+    (response: { credential: string }) => {
+      try {
+        const base64Url = response.credential.split('.')[1]
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+        const jsonPayload = decodeURIComponent(
+          window
+            .atob(base64)
+            .split('')
+            .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+            .join(''),
+        )
+
+        const payload = JSON.parse(jsonPayload)
+        const name = payload.name || payload.given_name || 'Google User'
+        const picture = payload.picture || ''
+
+        const currentPrefs = useLocalState.getState().preferences
+        useLocalState.setState({
+          preferences: {
+            ...currentPrefs,
+            userName: name,
+            avatarUrl: picture,
+          },
+        })
+        setCreateState({ userName: name })
+        setJoinState({ userName: name })
+
+        sessionStorage.setItem(AUTH_SESSION_KEY, '1')
+        setAuthenticated(true)
+        setAuthError('')
+      } catch (err) {
+        console.error('Google Sign-In Error:', err)
+        setAuthError('Google Sign-In failed. Please try again.')
+      }
+    },
+    [setCreateState, setJoinState],
+  )
+
+  useEffect(() => {
+    if (authenticated) return
+
+    let checkInterval: ReturnType<typeof setInterval> | null = null
+
+    const initGoogle = () => {
+      const google = (
+        window as Window & {
+          google?: {
+            accounts?: {
+              id?: {
+                initialize: (config: {
+                  client_id: string
+                  callback: (response: { credential: string }) => void
+                }) => void
+                renderButton: (element: HTMLElement, options: object) => void
+              }
+            }
+          }
+        }
+      ).google
+
+      if (google?.accounts?.id) {
+        if (checkInterval) clearInterval(checkInterval)
+        const clientId =
+          process.env.REACT_APP_GOOGLE_CLIENT_ID ||
+          '1047648358482-example.apps.googleusercontent.com'
+
+        google.accounts.id.initialize({
+          client_id: clientId,
+          callback: handleGoogleCredentialResponse,
+        })
+
+        const googleBtnDiv = document.getElementById('googleBtn')
+        if (googleBtnDiv) {
+          google.accounts.id.renderButton(googleBtnDiv, {
+            theme: 'outline',
+            size: 'large',
+            width: '100%',
+          })
+        }
+      }
+    }
+
+    checkInterval = setInterval(initGoogle, 500)
+    initGoogle()
+
+    return () => {
+      if (checkInterval) clearInterval(checkInterval)
+    }
+  }, [authenticated, handleGoogleCredentialResponse])
+
+  const handleSignOut = () => {
+    sessionStorage.removeItem(AUTH_SESSION_KEY)
+    const currentPrefs = useLocalState.getState().preferences
+    useLocalState.setState({
+      preferences: {
+        ...currentPrefs,
+        userName: '',
+        avatarUrl: '',
+      },
+    })
+    setCreateState({ userName: '' })
+    setJoinState({ userName: '' })
+    setAuthenticated(false)
+  }
+
   const hasLiveVideoTrack = userStream
     .getVideoTracks()
     .some(track => track.enabled && track.readyState === 'live')
@@ -242,6 +348,17 @@ const Landing: FC = () => {
                 Continue
               </button>
             </form>
+            <div className="gmeet-divider" style={{ margin: '16px 0' }}>
+              <span>or</span>
+            </div>
+            <div
+              id="googleBtn"
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                width: '100%',
+              }}
+            ></div>
           </div>
         </main>
       </div>
@@ -251,12 +368,65 @@ const Landing: FC = () => {
   // Pre-meeting lobby with video preview
   return (
     <div className="gmeet-lobby">
-      <header className="gmeet-lobby-header">
+      <header
+        className="gmeet-lobby-header"
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
         <div className="gmeet-logo">
           <svg viewBox="0 0 24 24" width="32" height="32" fill="#1a73e8">
             <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z" />
           </svg>
           <span>Frenmio</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span
+            style={{
+              fontSize: '14px',
+              fontWeight: 500,
+              color: 'var(--text-primary)',
+            }}
+          >
+            {preferences.userName || userName}
+          </span>
+          {preferences.avatarUrl && (
+            <img
+              src={preferences.avatarUrl}
+              alt="Avatar"
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                objectFit: 'cover',
+                border: '1px solid rgba(255,255,255,0.2)',
+              }}
+            />
+          )}
+          <button
+            onClick={handleSignOut}
+            style={{
+              background: 'rgba(231, 76, 60, 0.1)',
+              border: '1px solid rgba(231, 76, 60, 0.2)',
+              borderRadius: '4px',
+              color: '#e74c3c',
+              cursor: 'pointer',
+              fontSize: '12px',
+              fontWeight: 600,
+              padding: '6px 12px',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseOver={e => {
+              e.currentTarget.style.background = 'rgba(231, 76, 60, 0.2)'
+            }}
+            onMouseOut={e => {
+              e.currentTarget.style.background = 'rgba(231, 76, 60, 0.1)'
+            }}
+          >
+            Sign out
+          </button>
         </div>
       </header>
 
@@ -268,11 +438,26 @@ const Landing: FC = () => {
               <PreviewMedia stream={userStream} />
             ) : (
               <div className="gmeet-video-placeholder">
-                <div className="gmeet-avatar-large">
-                  {(userName || preferences.userName || 'G')
-                    .slice(0, 1)
-                    .toUpperCase()}
-                </div>
+                {preferences.avatarUrl ? (
+                  <img
+                    src={preferences.avatarUrl}
+                    alt="Profile"
+                    style={{
+                      width: '100px',
+                      height: '100px',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      border: '4px solid rgba(255, 255, 255, 0.2)',
+                      marginBottom: '16px',
+                    }}
+                  />
+                ) : (
+                  <div className="gmeet-avatar-large">
+                    {(userName || preferences.userName || 'G')
+                      .slice(0, 1)
+                      .toUpperCase()}
+                  </div>
+                )}
                 <p>Camera is off</p>
               </div>
             )}

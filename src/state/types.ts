@@ -13,6 +13,7 @@ export type ISocketMessageData =
   | {
       connection: true
       userName: string
+      avatarUrl?: string
     }
   | {
       sdpSignal: unknown
@@ -88,6 +89,7 @@ export interface ILocalState {
   preferences: {
     userName?: string
     meetingName?: string
+    avatarUrl?: string
   }
   handRaised: boolean
 }
@@ -116,4 +118,5 @@ export interface IConnection {
   displayStream: Stream
   peerInstance: Peer.Instance
   metaData?: ConnectionMetaData
+  avatarUrl?: string
 }

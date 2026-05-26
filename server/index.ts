@@ -215,7 +215,7 @@ io.on('connection', socket => {
     }
   })
 
-  socket.on('request:join_room', async ({ userName, roomId: idOrLink }, cb) => {
+  socket.on('request:join_room', async ({ userName, roomId: idOrLink, avatarUrl }, cb) => {
     try {
       // TODO Get permission from the room
       const room = Rooms.get(getRoomId(idOrLink))
@@ -248,6 +248,7 @@ io.on('connection', socket => {
         .emit('action:establish_peer_connection', {
           userName,
           userId,
+          avatarUrl,
         })
       socket.join(room.id)
       io.to(socket.id).emit('action:room_connection_established', { room })

@@ -141,7 +141,8 @@ export const createRemoteConnection = ({
   initiator,
   userId,
   userName,
-}: Pick<IConnection, 'userId' | 'userName' | 'initiator'>) => {
+  avatarUrl,
+}: Pick<IConnection, 'userId' | 'userName' | 'initiator' | 'avatarUrl'>) => {
   if (!Peer.WEBRTC_SUPPORT) {
     alert(
       'Your browser does not support WebRTC or it is disabled. Please use a WebRTC enabled browser to use this app.',
@@ -173,6 +174,7 @@ export const createRemoteConnection = ({
     userStream: new Stream(),
     displayStream: new Stream(),
     initiator,
+    avatarUrl,
   }
 
   const reRenderConnection = () =>
@@ -274,6 +276,7 @@ export const createRemoteConnection = ({
       data: {
         connection: true,
         userName: nameSelf || '',
+        avatarUrl: localState.preferences.avatarUrl || '',
       },
     })
   }

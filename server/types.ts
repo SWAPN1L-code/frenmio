@@ -24,7 +24,7 @@ export interface IServerToClientEvent<T = unknown> {
     'action:room_connection_established': Ev<{ room: IRoom }>
     'action:room_connection_terminated': Ev<{ roomId: string }>
 
-    'action:establish_peer_connection': Ev<{ userName: string; userId: string }>
+    'action:establish_peer_connection': Ev<{ userName: string; userId: string; avatarUrl?: string }>
     'action:terminate_peer_connection': Ev<{ userId: string }>
 
     'action:message_received': Ev<{ from: string; data: T }>
@@ -32,7 +32,7 @@ export interface IServerToClientEvent<T = unknown> {
 
 export interface IClientToServerEvent<T = unknown> {
     'request:create_room': Ev<{ room: IRoom }>
-    'request:join_room': Ev<{ userName: string; roomId: string }>
+    'request:join_room': Ev<{ userName: string; roomId: string; avatarUrl?: string }>
     'request:leave_room': Ev<{ roomId: string }>
 
     'request:send_mesage': Ev<{ to: string; roomId: string, data: T }>

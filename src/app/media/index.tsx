@@ -33,6 +33,7 @@ export const Media: FC = () => {
     .map(c => ({
       stream: c.userStream,
       label: userLabel(c),
+      avatarUrl: c.avatarUrl,
     }))
 
   const [pinnedItem, setPinnedItem] = useState<VideoBoxProps>()
@@ -52,6 +53,7 @@ export const Media: FC = () => {
           stream: userMedia,
           label: 'You',
           personaText: preferences.userName,
+          avatarUrl: preferences.avatarUrl,
           noContextualMenu: true,
         })
       }
@@ -65,6 +67,7 @@ export const Media: FC = () => {
     connections.length,
     pinnedItem,
     preferences.userName,
+    preferences.avatarUrl,
     screenItems,
     userMedia,
     userItems,
@@ -161,6 +164,7 @@ export const Media: FC = () => {
             stream={userMedia}
             label="You"
             personaText={preferences.userName}
+            avatarUrl={preferences.avatarUrl}
             noContextualMenu
           />,
         )}
