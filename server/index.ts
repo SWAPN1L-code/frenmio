@@ -31,10 +31,12 @@ const getCorsOrigin = (): string | string[] => {
   }
 }
 
+const origin = getCorsOrigin()
+
 const serverOpts: Partial<ServerOptions> = {
   cors: {
-    origin: getCorsOrigin(),
-    credentials: !!process.env.ALLOW_ORIGIN,
+    origin,
+    credentials: origin !== '*',
   },
 }
 const io = new Server<
