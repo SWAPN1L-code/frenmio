@@ -12,7 +12,7 @@ export const PreviewMedia: FC<{ stream: MediaStream }> = ({ stream }) => {
     const playPromise = video.play()
     if (playPromise !== undefined) {
       playPromise.catch(() => {
-        // Suppress initial autoplay errors if blocked by browser, 
+        // Suppress initial autoplay errors if blocked by browser,
         // the user can explicitly trigger it later if needed.
         console.warn('Autoplay prevented')
       })

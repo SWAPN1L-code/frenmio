@@ -149,7 +149,7 @@ const MyCommandBar: FC = () => {
   const isRemoteDisplay = connections.some(c => !c.displayStream.empty)
   const [mediaBtnsDisabled, setMediaBtnsDisabled] = useState(false)
 
-  // Theme Context 
+  // Theme Context
   const { colorScheme, setColorScheme } = useContext(ColorSchemeContext)
   const isDark = colorScheme === 'dark'
 
@@ -179,7 +179,7 @@ const MyCommandBar: FC = () => {
     else
       await stopMediaDevice(
         videoDevices.find(d => d.deviceId === currentCameraId) ||
-        dummyVideoDevice,
+          dummyVideoDevice,
       )
     setMediaBtnsDisabled(false)
   }
@@ -265,7 +265,7 @@ const MyCommandBar: FC = () => {
           <ControlButton
             icon={LayoutGrid}
             label="View"
-            onClick={() => { }} // Placeholder
+            onClick={() => {}} // Placeholder
           />
 
           <div className="relative">

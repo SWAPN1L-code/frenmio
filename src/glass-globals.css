@@ -84,27 +84,37 @@
       sans-serif;
     /* Soft ambient gradient for depth */
     background:
-      radial-gradient(ellipse 80% 50% at 50% -20%,
+      radial-gradient(
+        ellipse 80% 50% at 50% -20%,
         rgba(120, 119, 198, 0.15),
-        transparent),
-      radial-gradient(ellipse 60% 40% at 100% 0%,
+        transparent
+      ),
+      radial-gradient(
+        ellipse 60% 40% at 100% 0%,
         rgba(59, 130, 246, 0.08),
-        transparent),
-      radial-gradient(ellipse 60% 40% at 0% 100%,
+        transparent
+      ),
+      radial-gradient(
+        ellipse 60% 40% at 0% 100%,
         rgba(147, 51, 234, 0.06),
-        transparent),
+        transparent
+      ),
       hsl(var(--background));
     background-attachment: fixed;
   }
 
   .dark body {
     background:
-      radial-gradient(ellipse 80% 50% at 50% -20%,
+      radial-gradient(
+        ellipse 80% 50% at 50% -20%,
         rgba(120, 119, 198, 0.1),
-        transparent),
-      radial-gradient(ellipse 60% 40% at 100% 0%,
+        transparent
+      ),
+      radial-gradient(
+        ellipse 60% 40% at 100% 0%,
         rgba(59, 130, 246, 0.05),
-        transparent),
+        transparent
+      ),
       hsl(var(--background));
   }
 }
@@ -333,15 +343,12 @@
   box-shadow:
     /* Outer glow */
     0 0 0 1px rgba(255, 255, 255, 0.4),
-    /* Depth shadow */
-    0 32px 64px -16px rgba(0, 0, 0, 0.15),
+    /* Depth shadow */ 0 32px 64px -16px rgba(0, 0, 0, 0.15),
     0 16px 32px -8px rgba(0, 0, 0, 0.1),
     0 8px 16px -4px rgba(0, 0, 0, 0.08),
-    /* Inner highlight */
-    inset 0 2px 0 rgba(255, 255, 255, 0.9),
+    /* Inner highlight */ inset 0 2px 0 rgba(255, 255, 255, 0.9),
     inset 0 -1px 0 rgba(0, 0, 0, 0.02),
-    /* Side highlights for 3D effect */
-    inset 1px 0 0 rgba(255, 255, 255, 0.5),
+    /* Side highlights for 3D effect */ inset 1px 0 0 rgba(255, 255, 255, 0.5),
     inset -1px 0 0 rgba(255, 255, 255, 0.5);
 }
 
@@ -390,9 +397,11 @@ body {
   height: min(55vw, 720px);
   top: -20%;
   left: -8%;
-  background: radial-gradient(circle,
-      rgba(148, 187, 233, 0.75),
-      rgba(148, 187, 233, 0));
+  background: radial-gradient(
+    circle,
+    rgba(148, 187, 233, 0.75),
+    rgba(148, 187, 233, 0)
+  );
 }
 
 .liquid-ambient-bottom {
@@ -400,9 +409,11 @@ body {
   height: min(48vw, 650px);
   right: -10%;
   bottom: -22%;
-  background: radial-gradient(circle,
-      rgba(255, 176, 145, 0.7),
-      rgba(255, 176, 145, 0));
+  background: radial-gradient(
+    circle,
+    rgba(255, 176, 145, 0.7),
+    rgba(255, 176, 145, 0)
+  );
 }
 
 .glass-chip {
@@ -508,9 +519,11 @@ body {
   justify-content: center;
   gap: 8px;
   background:
-    radial-gradient(circle at 20% 20%,
+    radial-gradient(
+      circle at 20% 20%,
       rgba(255, 255, 255, 0.18),
-      transparent 50%),
+      transparent 50%
+    ),
     linear-gradient(145deg, #212632 0%, #283b56 48%, #47364e 100%);
 }
 
@@ -638,7 +651,11 @@ body {
 .gmeet-page {
   min-height: 100vh;
   background: #fff;
-  font-family: 'Google Sans', 'Roboto', -apple-system, sans-serif;
+  font-family:
+    'Google Sans',
+    'Roboto',
+    -apple-system,
+    sans-serif;
 }
 
 .gmeet-header {
@@ -730,12 +747,16 @@ body {
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s, box-shadow 0.2s;
+  transition:
+    background 0.2s,
+    box-shadow 0.2s;
 }
 
 .gmeet-btn-primary:hover {
   background: #1557b0;
-  box-shadow: 0 1px 3px rgba(60, 64, 67, 0.3), 0 4px 8px rgba(60, 64, 67, 0.15);
+  box-shadow:
+    0 1px 3px rgba(60, 64, 67, 0.3),
+    0 4px 8px rgba(60, 64, 67, 0.15);
 }
 
 .gmeet-btn-primary:disabled {
@@ -936,7 +957,11 @@ body {
 .gmeet-lobby {
   min-height: 100vh;
   background: #f8f9fa;
-  font-family: 'Google Sans', 'Roboto', -apple-system, sans-serif;
+  font-family:
+    'Google Sans',
+    'Roboto',
+    -apple-system,
+    sans-serif;
 }
 
 .gmeet-lobby-header {

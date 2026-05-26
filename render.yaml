@@ -3,11 +3,11 @@ services:
     name: frenmio-server
     env: node
     plan: free
-    repo: https://github.com/YOUR_USERNAME/REPONAME # Render will actually pick this up from the connected repo usually, but good for reference
-    buildCommand: cd server && npm install && npm run build
-    startCommand: cd server && npm start
+    rootDir: server
+    buildCommand: npm install && npm run build
+    startCommand: npm start
     envVars:
       - key: PORT
-        value: 10000
+        value: 5005
       - key: ALLOW_ORIGIN
-        generateValue: true # Placeholder, user needs to update this
+        value: '"*"'

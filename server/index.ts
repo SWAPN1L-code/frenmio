@@ -21,9 +21,19 @@ const httpServer = createServer((_, res) => {
   res.setHeader('Content-Type', 'text/plain');
   res.end('ok\n');
 })
+const getCorsOrigin = (): string | string[] => {
+  const origin = process.env.ALLOW_ORIGIN
+  if (!origin) return '*'
+  try {
+    return JSON.parse(origin)
+  } catch {
+    return origin
+  }
+}
+
 const serverOpts: Partial<ServerOptions> = {
   cors: {
-    origin: JSON.parse(process.env.ALLOW_ORIGIN || '"*"'),
+    origin: getCorsOrigin(),
     credentials: !!process.env.ALLOW_ORIGIN,
   },
 }

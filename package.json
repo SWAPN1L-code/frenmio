@@ -2,6 +2,7 @@
     "name": "frenmio",
     "version": "2.0.0",
     "private": true,
+    "proxy": "http://127.0.0.1:5005",
     "author": "Swapnil Negi",
     "engines": {
         "node": ">=16"

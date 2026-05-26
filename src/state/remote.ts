@@ -17,11 +17,9 @@ import { onChatReceived } from './chat'
 import adapter from 'webrtc-adapter'
 
 export const createSocket = () => {
-  const serverPort = process.env.REACT_APP_SAME_ORIGIN_SOCKET_PORT
-  const { protocol, hostname, port } = window.location
-  const url =
-    process.env.REACT_APP_SOCKET_URL ||
-    `${protocol}//${hostname}:${serverPort || port}`
+  // If REACT_APP_SOCKET_URL is undefined or empty string,
+  // socket.io automatically uses window.location.origin, which perfectly wraps into our proxy!
+  const url = process.env.REACT_APP_SOCKET_URL || ''
 
   const socket = io(url, {
     withCredentials: !!process.env.REACT_APP_SOCKET_URL,
@@ -87,6 +85,13 @@ export const setupLocalMediaListeners = () => {
 
 export const createPeerInstance = (opts: Peer.Options) => {
   return new Peer({
+    config: {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+      ],
+    },
     sdpTransform: function transform(sdp) {
       const { connections } = useRemoteState.getState()
       const bandwidth =

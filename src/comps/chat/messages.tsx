@@ -54,10 +54,11 @@ const Messages: FC<{ children: ReactNode }> = ({ children }) => {
             rows={1}
             placeholder="Type your message..."
             value={message}
-            onChange={(e) => {
+            onChange={e => {
               setMessage(e.target.value)
               e.target.style.height = 'auto'
-              e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'
+              e.target.style.height =
+                Math.min(e.target.scrollHeight, 120) + 'px'
             }}
             onKeyDown={e => {
               if (e.key === 'Enter' && !e.shiftKey) {
@@ -72,7 +73,15 @@ const Messages: FC<{ children: ReactNode }> = ({ children }) => {
             title="Send"
             className="absolute right-2 bottom-2 p-2 rounded-xl text-foreground/70 hover:text-blue-400 hover:bg-blue-500/10 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-foreground/70 transition-all backdrop-blur-sm"
           >
-            <Send size={20} strokeWidth={2} className={message.trim() ? "drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]" : ""} />
+            <Send
+              size={20}
+              strokeWidth={2}
+              className={
+                message.trim()
+                  ? 'drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]'
+                  : ''
+              }
+            />
           </button>
         </div>
         <div className="text-[10px] text-foreground/40 text-center mt-2 font-medium tracking-wide w-full flex justify-center opacity-70">

@@ -29,4 +29,7 @@ module.exports = {
       mode: 'file',
     },
   },
+  devServer: {
+    allowedHosts: 'all',
+  },
 }

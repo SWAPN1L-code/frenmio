@@ -42,6 +42,14 @@ export class VolumeMeter {
     this.audioContext = audioContext
     this.track = this.stream.getAudioTracks()[0]
     this.stopped = false
+
+    if (!audioContext.audioWorklet) {
+      console.warn(
+        'AudioWorklet is not supported in this browser or environment. Volume meter disabled.',
+      )
+      return
+    }
+
     audioContext.audioWorklet.addModule('/scripts/volume-meter.js').then(() => {
       const microphone = audioContext.createMediaStreamSource(this.stream)
       const node = new AudioWorkletNode(audioContext, 'volume-meter')
