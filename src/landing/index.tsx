@@ -23,6 +23,7 @@ const Landing: FC = () => {
   )
 
   const autoStartTriedRef = useRef(false)
+  const googleBtnRef = useRef<HTMLDivElement>(null)
 
   const [
     userStream,
@@ -114,7 +115,7 @@ const Landing: FC = () => {
         }
       ).google
 
-      if (google?.accounts?.id) {
+      if (google?.accounts?.id && googleBtnRef.current) {
         if (checkInterval) clearInterval(checkInterval)
         const clientId =
           process.env.REACT_APP_GOOGLE_CLIENT_ID ||
@@ -125,14 +126,11 @@ const Landing: FC = () => {
           callback: handleGoogleCredentialResponse,
         })
 
-        const googleBtnDiv = document.getElementById('googleBtn')
-        if (googleBtnDiv) {
-          google.accounts.id.renderButton(googleBtnDiv, {
-            theme: 'outline',
-            size: 'large',
-            width: '100%',
-          })
-        }
+        google.accounts.id.renderButton(googleBtnRef.current, {
+          theme: 'outline',
+          size: 'large',
+          width: '100%',
+        })
       }
     }
 
@@ -352,7 +350,7 @@ const Landing: FC = () => {
               <span>or</span>
             </div>
             <div
-              id="googleBtn"
+              ref={googleBtnRef}
               style={{
                 display: 'flex',
                 justifyContent: 'center',
